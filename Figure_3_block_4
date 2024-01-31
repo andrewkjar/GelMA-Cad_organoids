@@ -1,0 +1,85 @@
+Purpose: annotate cells 
+
+# Import dataset
+so <- readRDS("2023.06.20_so_pseuodtime.RDS")
+
+# Label cells, based on markers genes
+so$cell_type <- so$RNA_snn_res.2
+so$cell_type <- recode(so$cell_type,
+                       "0" = "Deep layer neuron",
+                       "1" = "Deep layer neuron",
+                       "2" = "Deep layer neuron",
+                       "3" = "Deep layer neuron",
+                       "4" = "Radial glia",
+                       "5" = "Non-specified neuron",
+                       "6" = "Non-specified neuron",
+                       "7" = "Intermediate progenitor / cycling cell",
+                       "8" = "Non-specified neuron",
+                       "9" = "Deep layer neuron",
+                       "10" = "Upper layer neuron",
+                       "11" = "Radial glia",
+                       "12" = "RELN+ Inhibitory neuron",
+                       "13" = "Non-specified neuron",
+                       "14" = "Radial glia",
+                       "15" = "Intermediate progenitor / cycling cell",
+                       "16" = "Non-specified neuron",
+                       "17" = "Non-specified neuron",
+                       "18" = "Radial glia",
+                       "19" = "Upper layer neuron",
+                       "20" = "RELN+ Inhibitory neuron",
+                       "21" = "Intermediate progenitor / cycling cell",
+                       "22" = "Non-specified neuron",
+                       "23" = "Deep layer neuron",
+                       "24" = "Deep layer neuron",
+                       "25" = "Non-specified neuron",
+                       "26" = "Non-specified neuron",
+                       "27" = "RELN+ Inhibitory neuron",
+                       "28" = "Choroid plexus epithelial cell",
+                       "30" = "DLX5+ Inhibitory neuron")
+
+# Visualize
+pdf("2024.01.29_DimPlot_cell_types_newly_annotated.pdf", height = 5, width = 10)
+DimPlot(so, group.by = 'cell_type',
+        cols = c('blue','pink','cyan3','lightgreen','darkblue','springgreen3','tomato2','springgreen4'))
+
+# Save dataset
+saveRDS(so, "2024.01.29_so_final_cell_types.RDS")
+
+# Set up dataframe with pseudotimes by condition for visualization purposes
+conditions <- so$condition
+pseudotimes <- so$pseudotime
+fine_labels <- as.character(so$cell_type)
+df.pseudo <- as.data.frame(cbind(conditions, cbind(pseudotimes, fine_labels)))
+df.pseudo$pseudotimes <- as.numeric(df.pseudo$pseudotimes)
+
+## Subset neurons, run ANOVA and visualize results
+df.pseudo.DLEN <- subset(df.pseudo, fine_labels %in% c('Deep layer neuron','Upper layer neuron','Non-specified neuron'))
+res.aov.DLEN <- aov(pseudotimes ~ conditions, df.pseudo.DLEN)
+tukey.DLEN <- TukeyHSD(res.aov.DLEN)
+
+df_p_val <- as.data.frame(tukey.DLEN$conditions)
+df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
+df_p_val$y.position <- c(24,27,20,30,20,20,33,20,36,40)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+pdf("2024.01.30_vlnPlot_pseudotime.pdf", width = 5, height = 5)
+ggplot(df.pseudo.DLEN, aes(x = conditions, y = pseudotimes)) +
+  geom_violin(aes(fill = conditions)) +
+  geom_boxplot(width = 0.3) +
+  scale_x_discrete(limits = rev) +
+  theme_prism() +
+  theme(axis.text.x = element_text(angle = 45)) +
+  xlab('') +
+  ylab('Pseudotime') +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  scale_fill_manual(values = c("darkturquoise","turquoise","goldenrod","gold","salmon")) +
+  ylim(c(0,40)) +
+  scale_x_discrete(limits = rev(levels(conditions))) +
+  NoLegend()
