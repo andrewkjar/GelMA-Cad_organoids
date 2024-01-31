@@ -1,0 +1,61 @@
+﻿Label,Image,"Length (um), measurement 1","Length (um), measurement 2","Length (um), measurement 3","Length (um), measurement 4",Average Length (um),Hydrogel,LAP Concentration,Matrix
+36,Stack-1:GelMACad_4_mg.nd2,78.1,72.73,38.56,62.57,62.99,GelMACad,4,GelMACad (soft)
+40,Stack-1:GelMACad_4_mg001.nd2,136.98,106.7,36.57,63.95,86.05,GelMACad,4,GelMACad (soft)
+44,Stack-1:GelMACad_4_mg002.nd2,40.58,64.25,48.25,45.1,49.545,GelMACad,4,GelMACad (soft)
+48,Stack-1:GelMACad_4_mg003.nd2,54.42,31.11,44.34,31.98,40.4625,GelMACad,4,GelMACad (soft)
+52,Stack-1:GelMACad_4_mg004.nd2,52.17,50.17,30.02,32.67,41.2575,GelMACad,4,GelMACad (soft)
+56,Stack-1:GelMACad_4_mg005.nd2,57.87,56.27,56.35,30.88,50.3425,GelMACad,4,GelMACad (soft)
+60,Stack-1:GelMACad_4_mg006.nd2,130.71,51.99,79.21,67.89,82.45,GelMACad,4,GelMACad (soft)
+96,Stack-1:GelMACad_10_mg.nd2,70.4,48.41,61.61,50.61,57.7575,GelMACad,10,GelMACad (stiff)
+100,Stack-1:GelMACad_10_mg001.nd2,96.81,52.64,48.11,46.69,61.0625,GelMACad,10,GelMACad (stiff)
+104,Stack-1:GelMACad_10_mg002.nd2,26.85,25.32,48.3,29.04,32.3775,GelMACad,10,GelMACad (stiff)
+108,Stack-1:GelMACad_10_mg003.nd2,61.69,34.44,25.08,42.96,41.0425,GelMACad,10,GelMACad (stiff)
+112,Stack-1:GelMACad_10_mg004.nd2,69.47,48.05,61.57,45.3,56.0975,GelMACad,10,GelMACad (stiff)
+116,Stack-1:GelMACad_10_mg005.nd2,61.61,42.9,44.12,27.5,44.0325,GelMACad,10,GelMACad (stiff)
+120,Stack-1:GelMACad_10_mg006.nd2,68.2,73.77,74.8,69.3,71.5175,GelMACad,10,GelMACad (stiff)
+1,Stack-1:GelMA_0_GelMACad_4_mg_LAP_side_A.nd2 - C=0,49.01,26.28,35.81,60.05,42.7875,GelMA,4,GelMA (soft)
+31,Stack-1:GelMA_0_GelMACad_10_mg_LAP.nd2 - C=0,92.56,103.48,73.27,76.37,86.42,GelMA,10,GelMA (stiff)
+35,Stack-1:GelMA_33_GelMACad_4_mg_LAP.nd2 - C=0,45.11,23.8,51.55,38.89,39.8375,GelMACad,4,GelMACad (soft)
+39,Stack-1:GelMA_33_GelMACad_4_mg_LAP001.nd2 - C=0,28.6,22.03,36.3,22,27.2325,GelMACad,4,GelMACad (soft)
+43,Stack-1:GelMA_33_GelMACad_4_mg_LAP002.nd2 - C=0,42.96,38.42,100.05,52.29,58.43,GelMACad,4,GelMACad (soft)
+47,Stack-1:GelMA_33_GelMACad_4_mg_LAP003.nd2 - C=0,22,31.5,71.63,21.83,36.74,GelMACad,4,GelMACad (soft)
+51,Stack-1:GelMA_33_GelMACad_4_mg_LAP004.nd2 - C=0,49.5,48.4,22,,39.96666667,GelMACad,4,GelMACad (soft)
+54,Stack-1:GelMA_33_GelMACad_4_mg_LAP005.nd2 - C=0,37.46,30.8,24.2,,30.82,GelMACad,4,GelMACad (soft)
+57,Stack-1:GelMA_33_GelMACad_4_mg_LAP006_side_A.nd2 - C=0,31.5,25.08,26.4,33,28.995,GelMACad,4,GelMACad (soft)
+77,Stack-1:GelMA_33_GelMACad_10_mg_LAP.nd2 - C=0,128.92,54.47,64.7,62.3,77.5975,GelMACad,10,GelMACad (stiff)
+81,Stack-1:GelMA_33_GelMACad_10_mg_LAP_side_A.nd2 - C=0,77.03,103.05,65.41,93.39,84.72,GelMACad,10,GelMACad (stiff)
+85,Stack-1:GelMA_33_GelMACad_10_mg_LAP001.nd2 - C=0,85.6,108.23,88.68,89.8,93.0775,GelMACad,10,GelMACad (stiff)
+89,Stack-1:Matrigel.nd2 - C=0,294.12,48.25,301.69,184.22,207.07,Matrigel,NA,Matrigel
+93,Stack-1:Matrigel001.nd2 - C=0,166.63,193,145.35,116.68,155.415,Matrigel,NA,Matrigel
+97,Stack-1:Matrigel002.nd2 - C=0,70.4,114.34,,,92.37,Matrigel,NA,Matrigel
+99,Stack-1:Matrigel003.nd2 - C=0,210.76,147.05,164.88,86.25,152.235,Matrigel,NA,Matrigel
+MH BATCH SPRING SEMESTER,GelMA_0_GelMACad_4_mg_LAP_ORG1.nd2 ,27.5,45.753,15.75,28.6,29.40075,GelMA,4,GelMA (soft)
+MH BATCH SPRING SEMESTER,GelMA_0_GelMACad_4_mg_LAP_ORG1001.nd2 ,49.805,38.421,32.816,25.084,36.5315,GelMA,4,GelMA (soft)
+MH BATCH SPRING SEMESTER,GelMA_0_GelMACad_4_mg_LAP_ORG1002.nd2 ,35.269,31.113,16.5,30.82,28.4255,GelMA,4,GelMA (soft)
+MH BATCH SPRING SEMESTER,GelMA_33_GelMACad_4_mg_LAP_ORG1.nd2 ,10.141,30.024,22.11,14.676,19.23775,GelMACad,4,GelMACad (soft)
+MH BATCH SPRING SEMESTER,GelMA_33_GelMACad_4_mg_LAP_ORG1001.nd2 ,37.658,49.744,20.283,25.132,33.20425,GelMACad,4,GelMACad (soft)
+MH BATCH SPRING SEMESTER,GelMA_33_GelMACad_4_mg_LAP_ORG1002.nd2 ,45.58,43.516,30.265,64.984,46.08625,GelMACad,4,GelMACad (soft)
+MH BATCH SPRING SEMESTER,GelMA_33_GelMACad_4_mg_LAP_ORG1003.nd2 ,34.224,23.309,38.374,34.523,32.6075,GelMACad,4,GelMACad (soft)
+MH BATCH SPRING SEMESTER,GelMA_33_GelMACad_4_mg_LAP_ORG1004.nd2 ,45.1,23.309,30.424,29.883,32.179,GelMACad,4,GelMACad (soft)
+MH BATCH SPRING SEMESTER,GelMA_33_GelMACad_4_mg_LAP_ORG1005.nd2 ,28.79,30.205,49.193,23.695,32.97075,GelMACad,4,GelMACad (soft)
+MH BATCH FALL SEMESTER,0_GelMACad_GelMA_1.nd2 ,112.974,59.4,101.015,112.249,96.4095,GelMA,10,GelMA (stiff)
+MH BATCH FALL SEMESTER,0_GelMACad_GelMA_2.nd2 ,90.227,84.04,32.202,70.434,69.22575,GelMA,10,GelMA (stiff)
+MH BATCH FALL SEMESTER,0_GelMACad_GelMA_3.nd2 ,121.842,140.559,145.267,137.939,136.40175,GelMA,10,GelMA (stiff)
+MH BATCH FALL SEMESTER,0_GelMACad_GelMA_4.nd2 ,124.921,137.337,106.268,132.863,125.34725,GelMA,10,GelMA (stiff)
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
