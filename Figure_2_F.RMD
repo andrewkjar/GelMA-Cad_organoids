@@ -1,0 +1,77 @@
+Purpose: visualize BIIIT measurements made in ImageJ
+
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(ggbeeswarm)
+
+
+# Import dataset for BIIIT width
+df <- read.csv("2023.07.11_compiled_organoid_BIIIT.csv")
+df <- subset(df, Matrix != '')
+
+# Run and inspect statistics
+aov.results <- aov(Average.Length..um. ~ Matrix, df)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+
+# Visualize
+df_p_val <- as.data.frame(tukey.results$Matrix)
+df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
+df_p_val$y.position <- c(180,10,10,335,180,215,310,10,250,285)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+cairo_pdf("2023.07.11_D30_BIIIT_comparison.pdf", width = 4, height = 4) 
+ggplot(df, aes(x = Matrix, y = Average.Length..um.)) +
+  geom_boxplot(fill = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism()  + 
+  xlab('') +
+  ylab('Average \u03b2IIIT Width') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  ylim(c(0,340))
+
+---
+
+# Import dataset for percent area
+df <- read.csv("2023.09.27_bIIIT_area_D30.csv")
+aov.results <- aov(BIIIT..Area.. ~ Matrix, df)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+
+# Visualize
+df_p_val <- as.data.frame(tukey.results$Matrix)
+df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
+df_p_val$y.position <- c(1.5,1,1,1,1.25,1,1,1,1.5,1)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+cairo_pdf("2023.09.27_D30_BIIIT_area_comparison.pdf", width = 4, height = 4) 
+ggplot(df, aes(x = Matrix, y = BIIIT..Area..)) +
+  geom_boxplot(fill = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism()  + 
+  xlab('') +
+  ylab('Percent \u03b2IIIT Area') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  scale_x_discrete(labels = c(bquote(GelMA^LC), bquote(GelMA^HC), bquote(GelMA-Cad^LC), bquote(GelMA-Cad^HC),bquote(Matrigel))) +
+  ylim(c(0,1.6)) 
