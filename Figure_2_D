@@ -1,8 +1,5 @@
-```{r}
-setwd("/home/kjara/GelMACad_figures_and_analysis")
-```
+Purpose: visualize and analyse the neurite lengths calculated by ImageJ analysis
 
-```{r}
 # Import libraries
 library(ggplot2)
 library(ggprism)
@@ -17,15 +14,11 @@ summary(aov.results)
 
 tukey.results <- TukeyHSD(aov.results)
 print(tukey.results)
-```
 
-```{r}
 # Define an order of sample identities
 sample_levels <- c('GelMA_LC','GelMA_HC','GelMACad_LC','GelMACad_HC','Matrigel')
 df$Condition <- factor(x = df$Condition, levels = sample_levels)
-```
 
-```{r}
 # Visualize
 df_p_val <- as.data.frame(tukey.results$Condition)
 df_p_val$group1 <- c('GelMA_LC','GelMACad_HC','GelMACad_LC','Matrigel','GelMACad_HC','GelMACad_LC','Matrigel','GelMACad_LC','Matrigel','Matrigel')
@@ -50,5 +43,4 @@ ggplot(df, aes(x = Condition, y = Dmax.um.)) +
   add_pvalue(df_p_val, label = 'p adj round') +
   scale_x_discrete(labels = c(bquote(GelMA^LC), bquote(GelMA^HC), bquote(GelMA-Cad^LC), bquote(GelMA-Cad^HC), bquote(Matrigel))) +
   ylim(c(-500,4000))
-```
 
