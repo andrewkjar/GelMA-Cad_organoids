@@ -1,0 +1,54 @@
+```{r}
+setwd("/home/kjara/GelMACad_figures_and_analysis")
+```
+
+```{r}
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(ggbeeswarm)
+
+# Import dataframe
+df <- read.csv("2023.11.27_Dmax_compiled.csv")
+
+# Run stats, for area measurements
+aov.results <- aov(Dmax.um. ~ Condition, df)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+```
+
+```{r}
+# Define an order of sample identities
+sample_levels <- c('GelMA_LC','GelMA_HC','GelMACad_LC','GelMACad_HC','Matrigel')
+df$Condition <- factor(x = df$Condition, levels = sample_levels)
+```
+
+```{r}
+# Visualize
+df_p_val <- as.data.frame(tukey.results$Condition)
+df_p_val$group1 <- c('GelMA_LC','GelMACad_HC','GelMACad_LC','Matrigel','GelMACad_HC','GelMACad_LC','Matrigel','GelMACad_LC','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA_HC','GelMA_HC','GelMA_HC','GelMA_HC','GelMA_LC','GelMA_LC','GelMA_LC','GelMACad_HC','GelMACad_HC','GelMACad_LC')
+df_p_val$y.position <- c(3000,3300,3000,3900,3000,3000,3600,3000,3000,3000)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+cairo_pdf("2023.11.27_D30_Neurite_length.pdf", width = 4, height = 4) # Use cairo_pdf so symbols will print out
+ggplot(df, aes(x = Condition, y = Dmax.um.)) +
+  geom_boxplot(fill = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  geom_beeswarm() +
+  theme_prism()  + 
+  xlab('') +
+  ylab('Maximum Neurite \n Length (\u03bcm)') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  scale_x_discrete(labels = c(bquote(GelMA^LC), bquote(GelMA^HC), bquote(GelMA-Cad^LC), bquote(GelMA-Cad^HC), bquote(Matrigel))) +
+  ylim(c(-500,4000))
+```
+
