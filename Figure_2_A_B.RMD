@@ -1,0 +1,56 @@
+Purpose: analyze differences in circularity and area in D30 embedded organoids
+
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(ggbeeswarm)
+
+# Import dataframe
+df <- read.csv("2023.07.10_D30_quantification_GelMAs.csv")
+
+# Run stats, for area measurements
+aov.results <- aov(Area ~ Hydrogel, df)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+
+# Visualize
+df_p_val <- as.data.frame(tukey.results$Hydrogel)
+df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
+df_p_val$y.position <- c(1,1,1,9e06,1,1,10.5e06,1, 12e06,13.5e06)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+cairo_pdf("2023.07.10_D30_area_comparison.pdf", width = 4, height = 4) # Use cairo_pdf so symbols will print out
+ggplot(df, aes(x = Hydrogel, y = Area)) +
+  geom_boxplot(fill = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  geom_beeswarm() +
+  theme_prism()  + 
+  xlab('') +
+  ylab('Area (\u03bcm\u00b2)') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  ylim(c(0,14e06))
+
+# Run stats, for circ measurments
+aov.results <- aov(Circ ~ Hydrogel, df)
+summary(aov.results)
+# Note: no significance
+
+# Visualize
+cairo_pdf("2023.07.10_D30_circ_comparison.pdf", width = 4, height = 4)
+ggplot(df, aes(x = Hydrogel, y = Circ)) +
+  geom_boxplot(fill = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  geom_beeswarm() +
+  theme_prism()  + 
+  xlab('') +
+  ylab('Circularity') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  ylim(c(0,1))
