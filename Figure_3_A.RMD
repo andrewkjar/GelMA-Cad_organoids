@@ -1,0 +1,66 @@
+Purpose: set up the seurat object from the PIPseeker outputs, using minimal filtering.
+
+# Import necessary libraries
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+
+# Read in data
+so.1.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-1_S1_L005_results/filtered_matrix/sensitivity_5")
+so.1 <- CreateSeuratObject(counts = so.1.data, min.cells = 3, min.features = 200)
+so.1$orig.ident <- 'GelMA_10_1'
+rm(so.1.data)
+
+so.2.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-2_S1_L005_results/filtered_matrix/sensitivity_5")
+so.2 <- CreateSeuratObject(counts = so.2.data, min.cells = 3, min.features = 200)
+so.2$orig.ident <- 'GelMA_10_2'
+rm(so.2.data)
+
+so.3.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-3_S1_L005_results/filtered_matrix/sensitivity_5")
+so.3 <- CreateSeuratObject(counts = so.3.data, min.cells = 3, min.features = 200)
+so.3$orig.ident <- 'GelMA_2_1'
+rm(so.3.data)
+
+so.4.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-4_S1_L005_results/filtered_matrix/sensitivity_5")
+so.4 <- CreateSeuratObject(counts = so.4.data, min.cells = 3, min.features = 200)
+so.4$orig.ident <- 'GelMA_10_3'
+rm(so.4.data)
+
+so.5.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-5_S1_L005_results/filtered_matrix/sensitivity_5")
+so.5 <- CreateSeuratObject(counts = so.5.data, min.cells = 3, min.features = 200)
+so.5$orig.ident <- 'GelMACad_4_1'
+rm(so.5.data)
+
+so.6.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-6_S1_L005_results/filtered_matrix/sensitivity_5")
+so.6 <- CreateSeuratObject(counts = so.6.data, min.cells = 3, min.features = 200)
+so.6$orig.ident <- 'GelMACad_10_1'
+rm(so.6.data)
+
+so.7.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-7_S1_L005_results/filtered_matrix/sensitivity_5")
+so.7 <- CreateSeuratObject(counts = so.7.data, min.cells = 3, min.features = 200)
+so.7$orig.ident <- 'Matrigel_1'
+rm(so.7.data)
+
+so.8.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-8_S1_L005_results/filtered_matrix/sensitivity_5")
+so.8 <- CreateSeuratObject(counts = so.8.data, min.cells = 3, min.features = 200)
+so.8$orig.ident <- 'Matrigel_2'
+rm(so.8.data)
+
+# Merge datasets
+so.combined <- merge(so.1, y = c(so.2, so.3, so.4, so.5, so.6, so.7, so.8))
+
+# Do initial filtering based on mitochondrial percentage and number of features
+so.combined[["percent.mt"]] <- PercentageFeatureSet(so.combined, pattern = "^MT-")
+so.combined.cleaned <- subset(so.combined, subset = nFeature_RNA > 1000 & nFeature_RNA < 4000)
+
+
+# Process data, do dimension reduction
+so.combined.cleaned <- NormalizeData(so.combined.cleaned)
+so.combined.cleaned <- FindVariableFeatures(so.combined.cleaned, selection.method = "vst", nfeatures = 2000)
+so.combined.cleaned <- ScaleData(so.combined.cleaned, verbose = FALSE)
+so.combined.cleaned <- RunPCA(so.combined.cleaned, npcs = 50, verbose = FALSE)
+so.combined.cleaned <- RunUMAP(so.combined.cleaned, reduction = "pca", dims = 1:50)
+so.combined.cleaned <- FindNeighbors(so.combined.cleaned, reduction = "pca", dims = 1:50)
+so.combined.cleaned <- FindClusters(so.combined.cleaned, resolution = 1)
+
+saveRDS(so.combined.cleaned, "2023.05.20_AK_9968_so.combined.RDS")
