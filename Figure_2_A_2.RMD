@@ -1,0 +1,124 @@
+Purpose: run Gruffi on cells to improve cell trajectory analysis and downstream analysis.
+
+# Import necessary libraries
+library(Seurat.utils)
+library(biomaRt)
+library(Seurat)
+library(dplyr)
+library(Gruffi)
+
+# Read in pre-filtered dataset
+so <- readRDS("2023.05.20_AK_9968_so.combined.RDS") # Read in dataset pre-filtering
+
+# Prepare dataset for Gruffi
+combined.obj <- Seurat.utils::SetupReductionsNtoKdimensions(obj = so, nPCs = 50, dimensions=3:2, reduction="umap")
+
+# Import gene sets for filtering
+ensembl <- biomaRt::useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl")
+go1 <- "GO:0006096" # Glycolysis
+go2 <- "GO:0034976" # ER-stress
+go3 <- "GO:0042063" # Gliogenesis, negative filtering
+
+# Find granular resolution for filtering
+combined.obj <- aut.res.clustering(obj = combined.obj)
+granule.res.4.gruffi <- combined.obj@misc$gruffi$'optimal.granule.res'	
+combined.obj <- reassign.small.clusters(combined.obj, ident = granule.res.4.gruffi) # will be stored in meta data column as "seurat_clusters.reassigned"
+granule.res.4.gruffi <- paste0(granule.res.4.gruffi, '.reassigned')
+
+# Add module scores
+# Glycolytic process	GO:0006096
+combined.obj <- GO_score_evaluation(obj = combined.obj, GO_term = go1, save.UMAP = TRUE, new_GO_term_computation = T, clustering = granule.res.4.gruffi, plot.each.gene = F)
+
+# ER stress 	GO:0034976
+combined.obj <- GO_score_evaluation(obj = combined.obj, GO_term = go2, save.UMAP = TRUE, new_GO_term_computation = T, clustering = granule.res.4.gruffi, plot.each.gene = F)
+
+# Gliogenesis		GO:0042063
+combined.obj <- GO_score_evaluation(obj = combined.obj, GO_term = go3, save.UMAP = TRUE, new_GO_term_computation = T, clustering = granule.res.4.gruffi, plot.each.gene = F)
+
+# Create score names:
+(i1 <- Stringendo::kppu(granule.res.4.gruffi, 'cl.av', go1))
+(i2 <- Stringendo::kppu(granule.res.4.gruffi, 'cl.av', go2))
+(i3 <- Stringendo::kppu(granule.res.4.gruffi, 'cl.av', go3))
+
+# Call Shiny app
+combined.obj <- Shiny.GO.thresh(obj = combined.obj,
+                                stress.ident1 = i1,
+                                stress.ident2 = i2,
+                                notstress.ident3 = i3,
+                                plot.cluster.shiny = "orig.ident")
+# Save the object with the default settings (seems to work well at default)
+
+# Subset object
+cellIDs.keep <- which_names(!combined.obj$'is.Stressed')
+subset.obj <- subset(x = combined.obj, cells = cellIDs.keep)  
+Seurat.utils::clUMAP('is.Stressed', label = F, obj = subset.obj)
+
+# Rerun dimension reduction on subset data
+subset.obj <- RunPCA(subset.obj, npcs = 50, verbose = F)
+subset.obj <- RunUMAP(subset.obj, reduction = 'pca', dims = 1:50)
+subset.obj <- FindNeighbors(subset.obj, reduction = 'pca', dims = 1:50)
+subset.ojb <- FindClusters(subset.obj, resolution = 1)
+
+subset.obj$condition <- subset.obj$orig.ident
+subset.obj$condition <- recode(subset.obj$condition,
+                               "GelMA_10_1" = "GelMA (stiff)",
+                               "GelMA_10_2" = "GelMA (stiff)",
+                               "GelMA_10_3" = "GelMA (stiff)",
+                               "GelMA_2_1" = "GelMA (soft)",
+                               "GelMACad_4_1" = "GelMACad (soft)",
+                               "GelMACad_10_1" = "GelMACad (stiff)",
+                               "Matrigel_1" = "Matrigel",
+                               "Matrigel_2" = "Matrigel")
+
+
+# Save seurat object for future use
+saveRDS(subset.obj, "2023.06.13_so.combined_gruffi.RDS")
+
+# Analyze if stressed cells are enriched in a particular sample
+gruffi.df <- as.data.frame.matrix(table(combined.obj$orig.ident, combined.obj$is.Stressed) / rowSums(table(combined.obj$orig.ident, combined.obj$is.Stressed)))
+gruffi.df$Condition <- rownames(gruffi.df)
+colnames(gruffi.df) <- c('Not stressed','Stressed','Condition')
+
+gruffi.df$Matrix <- gruffi.df$Condition
+gruffi.df$Matrix <- as.factor(recode(gruffi.df$Matrix,
+                                 "GelMA_10_1" = "GelMA",
+                                 "GelMA_10_2" = "GelMA",
+                                 "GelMA_10_3" = "GelMA",
+                                 "GelMA_2_1" = "GelMA",
+                                 "GelMACad_10_1" = "GelMACad",
+                                 "GelMACad_4_1" = "GelMACad",
+                                 "Matrigel_1" = "Matrigel",
+                                 "Matrigel_2" = "Matrigel"))
+
+gruffi.df$stiffness <- gruffi.df$Condition
+gruffi.df$stiffness <- as.factor(recode(gruffi.df$stiffness,
+                                 "GelMA_10_1" = "stiff",
+                                 "GelMA_10_2" = "stiff",
+                                 "GelMA_10_3" = "stiff",
+                                 "GelMA_2_1" = "soft",
+                                 "GelMACad_10_1" = "stiff",
+                                 "GelMACad_4_1" = "soft",
+                                 "Matrigel_1" = "Matrigel",
+                                 "Matrigel_2" = "Matrigel"))
+
+res.aov <- aov(`Stressed` ~ Matrix, gruffi.df)
+summary(res.aov)
+tukey <- TukeyHSD(res.aov)
+print(tukey)
+
+df_p_val <- as.data.frame(tukey$Matrix)
+df_p_val$group1 <- c('GelMACad','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA','GelMA','GelMACad')
+df_p_val$y.position <- c(0.12, 0.25, 0.22)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.1)
+
+pdf("2023.06.23_gruffi_percentages_quantification.pdf")
+ggplot(gruffi.df, aes(x = Matrix, y = `Stressed`)) +
+  geom_point(aes(shape = stiffness), size = 3, color = 'darkturquoise') +
+  stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, 
+               geom = 'crossbar', width = 0.4) +
+  add_pvalue(df_p_val, label = 'p adj round', label.size = 6) +
+  ylab('Proportion stressed cells (%)') +
+  ylim(c(0,0.26)) +
+  theme_prism(base_size = 18)
