@@ -1,3 +1,5 @@
+Purpose: import, prepare, and annotate D90 and D120 organoid samples.
+
 # Import packages
 import numpy as np
 import pandas as pd
