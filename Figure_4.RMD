@@ -1,0 +1,431 @@
+Purpose: calculate DEGs between samples
+
+# Import necessary libraries
+library(Seurat)
+library(dplyr)
+library(org.Hs.eg.db)
+library(clusterProfiler)
+library(ggplot2)
+library(enrichplot)
+library(EnhancedVolcano)
+library(ggprism)
+library(ggrepel)
+library(ggpubr)
+
+# Import and prep dataset
+so <- readRDS("2024.01.29_so_final_cell_types.RDS")
+so$Matrix <- so$orig.ident
+so$Matrix <- recode(so$Matrix,
+                              "GelMA_10_1" = "GelMA",
+                              "GelMA_10_2" = "GelMA",
+                              "GelMA_10_3" = "GelMA",
+                              "GelMA_2_1" = "GelMA",
+                              "GelMACad_10_1" = "GelMACad",
+                              "GelMACad_4_1" = "GelMACad",
+                              "Matrigel_1" = "Matrigel",
+                              "Matrigel_2" = "Matrigel")
+
+so$stiffness <- so$orig.ident
+so$stiffness <- recode(so$stiffness,
+                              "GelMA_10_1" = "stiff",
+                              "GelMA_10_2" = "stiff",
+                              "GelMA_10_3" = "stiff",
+                              "GelMA_2_1" = "soft",
+                              "GelMACad_10_1" = "stiff",
+                              "GelMACad_4_1" = "soft",
+                              "Matrigel_1" = "NA",
+                              "Matrigel_2" = "NA")
+
+so.DLEN <- subset(so, cell_type%in% c("Deep layer neuron","Upper layer neuron","Non-specified neuron"))
+
+# Main comparison: GelMA v Matrigel
+Idents(so.DLEN) <- so.DLEN$Matrix
+DEG.GelMA_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMA', ident.2 = 'Matrigel')
+
+# Pathway analysis 
+converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
+       keys = rownames(DEG.GelMA_v_Matrigel),
+       columns = c("ENTREZID", "SYMBOL"),
+       keytype = "SYMBOL")
+
+converted.symbols <- subset(converted.symbols, !(duplicated(converted.symbols$SYMBOL)))
+DEG.GelMA_v_Matrigel$IDs <- converted.symbols$ENTREZID
+geneList <- DEG.GelMA_v_Matrigel$avg_log2FC
+names(geneList) <- DEG.GelMA_v_Matrigel$IDs
+geneList <- sort(geneList, decreasing = T)
+gsea_DEG.GelMA_v_Matrigel <- gseKEGG(geneList = geneList,
+              organism = 'hsa',
+              keyType = 'kegg',
+              minGSSize    = 10,
+              maxGSSize    = 500,
+              pvalueCutoff = 0.05,
+              verbose      = FALSE)
+
+gsea_DEG.GelMA_v_Matrigel@result
+
+gsea_DEG.GelMA_v_Matrigel.result <- gsea_DEG.GelMA_v_Matrigel@result
+subset(gsea_DEG.GelMA_v_Matrigel@result, Description == 'Carbon metabolism')[,11]
+
+# Manually type out pathway genes from the GSEA table for pathways of interest
+HIF1_signaling_pathway <- subset(converted.symbols, ENTREZID %in% c("5163","5230","3099","2026","7422","230","3098","226","1026","6513"))
+Oxidative_phosphorylation_pathway <- subset(converted.symbols, ENTREZID %in% c("4714","51079","4708","4725","1345","126328","533","4707","9551","54539","4718","9296","516","1337","4726","7384","27089","10975","4706","4697","4720","1329"))
+Carbon_metabolism_pathway <- subset(converted.symbols, ENTREZID %in% c("26227","5315","2597","6472","5230","3099","2026","230","3098","226","2821"))
+
+# Sub comparisons
+Idents(so.DLEN) <- so.DLEN$condition
+DEG.GelMA_soft_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMA (soft)', ident.2 = 'Matrigel', logfc.threshold = 0)
+DEG.GelMA_stiff_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMA (stiff)', ident.2 = 'Matrigel', logfc.threshold = 0)
+
+# Plotting
+DEG.GelMA_soft_v_Matrigel$genes <- rownames(DEG.GelMA_soft_v_Matrigel)
+DEG.GelMA_stiff_v_Matrigel$genes <- rownames(DEG.GelMA_stiff_v_Matrigel)
+DEG.GelMA_combined <- merge(DEG.GelMA_soft_v_Matrigel, DEG.GelMA_stiff_v_Matrigel, by = 'genes', all = T)
+DEG.GelMA_combined <- subset(DEG.GelMA_combined, p_val_adj.x < 0.05 & p_val_adj.y < 0.05)
+DEG.GelMA_combined$color <- 'DEG p < 0.05'
+DEG.GelMA_combined$order <- 0
+for (i in 1:length(DEG.GelMA_combined$color)) {
+  if (DEG.GelMA_combined$avg_log2FC.x[i] > 0.25 & DEG.GelMA_combined$avg_log2FC.y[i] > 0.25) {
+    DEG.GelMA_combined$color[i] <- '> FC in GelMA'
+    DEG.GelMA_combined$order[i] <- 1
+  }
+  if (DEG.GelMA_combined$avg_log2FC.x[i] < -0.25 & DEG.GelMA_combined$avg_log2FC.y[i] < -0.25) {
+    DEG.GelMA_combined$color[i] <- '> FC in Matrigel'
+    DEG.GelMA_combined$order[i] <- 2
+  }
+  if (DEG.GelMA_combined$genes[i] %in% Oxidative_phosphorylation_pathway$SYMBOL) {
+    DEG.GelMA_combined$color[i] <- 'Oxidative phosphorylation GSEA p = 0.005'
+    DEG.GelMA_combined$order[i] <- 3
+  }
+  if (DEG.GelMA_combined$genes[i] %in% unique(append(Carbon_metabolism_pathway$SYMBOL, HIF1_signaling_pathway$SYMBOL))) {
+    DEG.GelMA_combined$color[i] <- 'Carbon metabolism GSEA p = 0.034 or HIF-1 signaling pathway GSEA p = 0.034'
+    DEG.GelMA_combined$order[i] <- 4
+  }
+}
+DEG.GelMA_combined$labels <- ''
+DEG.GelMA_combined <- DEG.GelMA_combined[order(DEG.GelMA_combined$avg_log2FC.x),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.GelMA_combined$genes[i])) {
+  DEG.GelMA_combined$labels[i] <- DEG.GelMA_combined$genes[i]
+  }
+}
+DEG.GelMA_combined <- DEG.GelMA_combined[order(DEG.GelMA_combined$avg_log2FC.x, decreasing = T),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.GelMA_combined$genes[i])) {
+  DEG.GelMA_combined$labels[i] <- DEG.GelMA_combined$genes[i]
+  }
+}
+DEG.GelMA_combined <- DEG.GelMA_combined[order(DEG.GelMA_combined$avg_log2FC.y, decreasing = T),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.GelMA_combined$genes[i])) {
+  DEG.GelMA_combined$labels[i] <- DEG.GelMA_combined$genes[i]
+  }
+}
+DEG.GelMA_combined <- DEG.GelMA_combined[order(DEG.GelMA_combined$order),]
+
+pdf("2024.01.30_combined_Volcano_GelMA_v_Matrigel.pdf")
+ggplot(DEG.GelMA_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = labels)) +
+  geom_abline(h = 0, col = 'gray') +
+  geom_hline(yintercept = 0, col = 'gray') +
+  geom_vline(xintercept = 0, col = 'gray') +
+  geom_point(aes(color = color), size = 1) +
+  scale_color_manual(values = c('darkturquoise','lightsalmon','red','gray80','blue')) +
+  geom_text_repel(force = 50,
+                  max.overlaps = 30) +
+  xlim(c(-2,2)) +
+  xlab(expression(Average~Log[2]~Fold~Change~Matrigel~v~GelMA^LC)) +
+  ylim(c(-2,2)) +
+  ylab(expression(Average~Log[2]~Fold~Change~Matrigel~v~GelMA^HC)) +
+  theme_prism() +
+  NoLegend()
+
+###
+# Main comparison: GelMACad v Matrigel
+Idents(so.DLEN) <- so.DLEN$Matrix
+DEG.GelMACad_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMACad', ident.2 = 'Matrigel')
+
+# Pathway analysis 
+converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
+       keys = rownames(DEG.GelMACad_v_Matrigel),
+       columns = c("ENTREZID", "SYMBOL"),
+       keytype = "SYMBOL")
+
+converted.symbols <- subset(converted.symbols, !(duplicated(converted.symbols$SYMBOL)))
+DEG.GelMACad_v_Matrigel$IDs <- converted.symbols$ENTREZID
+geneList <- DEG.GelMACad_v_Matrigel$avg_log2FC
+names(geneList) <- DEG.GelMACad_v_Matrigel$IDs
+geneList <- sort(geneList, decreasing = T)
+gsea_DEG.GelMACad_v_Matrigel <- gseKEGG(geneList = geneList,
+              organism = 'hsa',
+              keyType = 'kegg',
+              minGSSize    = 10,
+              maxGSSize    = 500,
+              pvalueCutoff = 0.05,
+              verbose      = FALSE)
+
+gsea_DEG.GelMACad_v_Matrigel@result
+gsea_DEG.GelMACad_v_Matrigel.result <- gsea_DEG.GelMACad_v_Matrigel@result
+subset(gsea_DEG.GelMACad_v_Matrigel@result, Description == 'Biosynthesis of amino acids')[,11]
+
+# Manually type out pathway genes from the GSEA table for pathways of interest
+HIF1_signaling_pathway <- subset(converted.symbols, ENTREZID %in% c("3098","2026","3939","2023","5230","230","2597","6513","226"))
+Carbon_metabolism_pathway <- subset(converted.symbols, ENTREZID %in% c("5223","3098","6472","2026","2023","5315","2821","5230","230","2597","226"))
+Glycolysis_pathway <- subset(converted.symbols, ENTREZID %in% c("5223","3098","2026","3939","2023","5315","2821","5230","230","2597","226"))
+Metabolic_pathway <- subset(converted.symbols, ENTREZID %in% c("5223","3098","6472","2026","3939","4282","2023","5315","5033","2821","5230","230","2597","56901","226","768","59344"))
+Biosynthesis_of_amino_acids_pathway <- subset(converted.symbols, ENTREZID %in% c("5223","6472","2026","2023","5315","5230","230","2597","226"))
+
+# Sub comparisons
+Idents(so.DLEN) <- so.DLEN$condition
+DEG.GelMACad_soft_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMACad (soft)', ident.2 = 'Matrigel', logfc.threshold = 0)
+DEG.GelMACad_stiff_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMACad (stiff)', ident.2 = 'Matrigel', logfc.threshold = 0)
+
+# Plotting
+DEG.GelMACad_soft_v_Matrigel$genes <- rownames(DEG.GelMACad_soft_v_Matrigel)
+DEG.GelMACad_stiff_v_Matrigel$genes <- rownames(DEG.GelMACad_stiff_v_Matrigel)
+DEG.GelMACad_combined <- merge(DEG.GelMACad_soft_v_Matrigel, DEG.GelMACad_stiff_v_Matrigel, by = 'genes', all = T)
+DEG.GelMACad_combined <- subset(DEG.GelMACad_combined, p_val_adj.x < 0.05 & p_val_adj.y < 0.05)
+DEG.GelMACad_combined$color <- 'DEG p < 0.05'
+DEG.GelMACad_combined$order <- 0
+for (i in 1:length(DEG.GelMACad_combined$color)) {
+  if (DEG.GelMACad_combined$avg_log2FC.x[i] > 0.25 & DEG.GelMACad_combined$avg_log2FC.y[i] > 0.25) {
+    DEG.GelMACad_combined$color[i] <- '> FC in GelMACad'
+    DEG.GelMACad_combined$order[i] <- 1
+  }
+  if (DEG.GelMACad_combined$avg_log2FC.x[i] < -0.25 & DEG.GelMACad_combined$avg_log2FC.y[i] < -0.25) {
+    DEG.GelMACad_combined$color[i] <- '> FC in Matrigel'
+    DEG.GelMACad_combined$order[i] <- 2
+  }
+  if (DEG.GelMACad_combined$genes[i] %in% unique(append(Carbon_metabolism_pathway$SYMBOL, c(HIF1_signaling_pathway$SYMBOL, Glycolysis_pathway$SYMBOL, Metabolic_pathway$SYMBOL, Biosynthesis_of_amino_acids_pathway$SYMBOL)))) {
+    DEG.GelMACad_combined$color[i] <- 'Pathway info'
+    DEG.GelMACad_combined$order[i] <- 3
+  }
+}
+DEG.GelMACad_combined$labels <- ''
+DEG.GelMACad_combined <- DEG.GelMACad_combined[order(DEG.GelMACad_combined$avg_log2FC.x),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.GelMACad_combined$genes[i])) {
+  DEG.GelMACad_combined$labels[i] <- DEG.GelMACad_combined$genes[i]
+  }
+}
+DEG.GelMACad_combined <- DEG.GelMACad_combined[order(DEG.GelMACad_combined$avg_log2FC.x, decreasing = T),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.GelMACad_combined$genes[i])) {
+  DEG.GelMACad_combined$labels[i] <- DEG.GelMACad_combined$genes[i]
+  }
+}
+DEG.GelMACad_combined <- DEG.GelMACad_combined[order(DEG.GelMACad_combined$avg_log2FC.y, decreasing = T),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.GelMACad_combined$genes[i])) {
+  DEG.GelMACad_combined$labels[i] <- DEG.GelMACad_combined$genes[i]
+  }
+}
+DEG.GelMACad_combined <- DEG.GelMACad_combined[order(DEG.GelMACad_combined$order),]
+
+pdf("2024.01.30_combined_Volcano_GelMACad_v_Matrigel.pdf")
+ggplot(DEG.GelMACad_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = labels)) +
+  geom_abline(h = 0, col = 'gray') +
+  geom_hline(yintercept = 0, col = 'gray') +
+  geom_vline(xintercept = 0, col = 'gray') +
+  geom_point(aes(color = color), size = 1) +
+  scale_color_manual(values = c('darkturquoise','red','gray80','lightsalmon')) +
+  geom_text_repel(force = 25,
+                  max.overlaps = 50) +
+  xlim(c(-2,2)) +
+  xlab(expression(Average~Log[2]~Fold~Change~Matrigel~v~GelMA-Cad^LC)) +
+  ylim(c(-2,2)) +
+  ylab(expression(Average~Log[2]~Fold~Change~Matrigel~v~GelMA-Cad^HC)) +
+  theme_prism() +
+  NoLegend()
+
+###
+# Main comparison: Stiff v Soft
+Idents(so.DLEN) <- so.DLEN$stiffness
+DEG.stiff_v_soft <- FindMarkers(so.DLEN, ident.1 = 'stiff', ident.2 = 'soft')
+
+# Pathway analysis 
+converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
+       keys = rownames(DEG.stiff_v_soft),
+       columns = c("ENTREZID", "SYMBOL"),
+       keytype = "SYMBOL")
+
+converted.symbols <- subset(converted.symbols, !(duplicated(converted.symbols$SYMBOL)))
+
+DEG.stiff_v_soft$IDs <- converted.symbols$ENTREZID
+geneList <- DEG.stiff_v_soft$avg_log2FC
+names(geneList) <- DEG.stiff_v_soft$IDs
+geneList <- sort(geneList, decreasing = T)
+gsea_DEG.stiff_v_soft <- gseKEGG(geneList = geneList,
+              organism = 'hsa',
+              keyType = 'kegg',
+              minGSSize    = 10,
+              maxGSSize    = 500,
+              pvalueCutoff = 0.05,
+              verbose      = FALSE)
+
+gsea_DEG.stiff_v_soft@result
+#Note: no functional enrichment
+
+# Sub comparisons
+Idents(so.DLEN) <- so.DLEN$condition
+DEG.GelMA_stiff_v_soft <- FindMarkers(so.DLEN, ident.1 = 'GelMA (stiff)', ident.2 = 'GelMA (soft)', logfc.threshold = 0)
+DEG.GelMACad_stiff_v_soft <- FindMarkers(so.DLEN, ident.1 = 'GelMACad (stiff)', ident.2 = 'GelMACad (soft)', logfc.threshold = 0)
+
+# Plotting
+DEG.GelMA_stiff_v_soft$genes <- rownames(DEG.GelMA_stiff_v_soft)
+DEG.GelMACad_stiff_v_soft$genes <- rownames(DEG.GelMACad_stiff_v_soft)
+DEG.stiffness_combined <- merge(DEG.GelMA_stiff_v_soft, DEG.GelMACad_stiff_v_soft, by = 'genes', all = T)
+DEG.stiffness_combined <- subset(DEG.stiffness_combined, p_val_adj.x < 0.05 & p_val_adj.y < 0.05)
+DEG.stiffness_combined$color <- 'DEG p < 0.05'
+DEG.stiffness_combined$order <- 0
+DEG.stiffness_combined$labels <- ''
+for (i in 1:length(DEG.stiffness_combined$color)) {
+  if (DEG.stiffness_combined$avg_log2FC.x[i] > 0.25 & DEG.stiffness_combined$avg_log2FC.y[i] > 0.25) {
+    DEG.stiffness_combined$color[i] <- '> FC in Stiff'
+    DEG.stiffness_combined$order[i] <- 1
+    DEG.stiffness_combined$labels[i] <- DEG.stiffness_combined$genes[i]
+    
+  }
+  if (DEG.stiffness_combined$avg_log2FC.x[i] < -0.25 & DEG.stiffness_combined$avg_log2FC.y[i] < -0.25) {
+    DEG.stiffness_combined$color[i] <- '> FC in Soft'
+    DEG.stiffness_combined$order[i] <- 2
+    DEG.stiffness_combined$labels[i] <- DEG.stiffness_combined$genes[i]
+  }
+}
+
+
+pdf("2024.01.30_combined_Volcano_stiffness.pdf")
+ggplot(DEG.stiffness_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = labels)) +
+  geom_abline(h = 0, col = 'gray') +
+  geom_hline(yintercept = 0, col = 'gray') +
+  geom_vline(xintercept = 0, col = 'gray') +
+  geom_point(aes(color = color), size = 1) +
+  scale_color_manual(values = c('darkturquoise','lightsalmon','gray80')) +
+  geom_text_repel(max.overlaps = 30) +
+  xlim(c(-3.5,3.5)) +
+  xlab(expression(Average~Log[2]~Fold~Change~GelMA^LC~v~GelMA^HC)) +
+  ylim(c(-3.5,3.5)) +
+  ylab(expression(Average~Log[2]~Fold~Change~GelMA-Cad^LC~v~GelMA-Cad^HC)) +
+  theme_prism() +
+  NoLegend()
+
+###
+# Main comparison: GelMACad v GelMA
+Idents(so.DLEN) <- so.DLEN$Matrix
+DEG.GelMA_v_GelMACad <- FindMarkers(so.DLEN, ident.1 = 'GelMA', ident.2 = 'GelMACad')
+
+# Pathway analysis 
+converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
+       keys = rownames(DEG.GelMA_v_GelMACad),
+       columns = c("ENTREZID", "SYMBOL"),
+       keytype = "SYMBOL")
+
+converted.symbols <- subset(converted.symbols, !(duplicated(converted.symbols$SYMBOL)))
+DEG.GelMA_v_GelMACad$IDs <- converted.symbols$ENTREZID
+geneList <- DEG.GelMA_v_GelMACad$avg_log2FC
+names(geneList) <- DEG.GelMA_v_GelMACad$IDs
+geneList <- sort(geneList, decreasing = T)
+gsea_DEG.GelMA_v_GelMACad <- gseKEGG(geneList = geneList,
+              organism = 'hsa',
+              keyType = 'kegg',
+              minGSSize    = 10,
+              maxGSSize    = 500,
+              pvalueCutoff = 0.05,
+              verbose      = FALSE)
+
+gsea_DEG.GelMA_v_GelMACad@result
+subset(gsea_DEG.GelMA_v_GelMACad@result, Description == 'Oxidative phosphorylation')[,11]
+subset(gsea_DEG.GelMA_v_GelMACad@result, Description == 'Metabolic pathways')[,11]
+
+# Manually type out pathway genes from the GSEA table for pathways of interest
+Oxidative_phosphorylation_pathway <- subset(converted.symbols, ENTREZID %in%
+c('51079','4714','126328','516','1337','4729','4707','4708','1345','4706','9551','4697','522','4725','10975','54539','1347','4696','4694','539','4700','4718','1327','9296','4726','4695','4710','6391','4702','4715'))
+Metabolic_pathway <- subset(converted.symbols, ENTREZID %in% 
+c('768','3939','7167','51079','4282','4714','126328','516','1337','4729','4707','4708','353','1345','4706','9551','4697','522','4725','6611','2597','2023','10975','54539','1347','4190','4696','11343','4694','11343','4694','2950','539','4700','4191','5315','4718','1327','226','3421','9296','5162','3028','4726','4695','4710','6391','4702','2947','4715','5160'))
+
+# Sub comparisons
+Idents(so.DLEN) <- so.DLEN$condition
+DEG.GelMA_soft_v_GelMACad_soft <- FindMarkers(so.DLEN, ident.1 = 'GelMA (soft)', ident.2 = 'GelMACad (soft)', logfc.threshold = 0)
+DEG.GelMA_stiff_v_GelMACad_stiff <- FindMarkers(so.DLEN, ident.1 = 'GelMA (stiff)', ident.2 = 'GelMACad (stiff)', logfc.threshold = 0)
+
+# Plotting
+DEG.GelMA_soft_v_GelMACad_soft$genes <- rownames(DEG.GelMA_soft_v_GelMACad_soft)
+DEG.GelMA_stiff_v_GelMACad_stiff$genes <- rownames(DEG.GelMA_stiff_v_GelMACad_stiff)
+DEG.peptide_combined <- merge(DEG.GelMA_soft_v_GelMACad_soft, DEG.GelMA_stiff_v_GelMACad_stiff, by = 'genes', all = T)
+DEG.peptide_combined <- subset(DEG.peptide_combined, p_val_adj.x < 0.05 & p_val_adj.y < 0.05)
+DEG.peptide_combined$color <- 'DEG p < 0.05'
+DEG.peptide_combined$order <- 0
+for (i in 1:length(DEG.peptide_combined$color)) {
+  if (DEG.peptide_combined$avg_log2FC.x[i] > 0.25 & DEG.peptide_combined$avg_log2FC.y[i] > 0.25) {
+    DEG.peptide_combined$color[i] <- '> FC in GelMA'
+    DEG.peptide_combined$order[i] <- 1
+  }
+  if (DEG.peptide_combined$avg_log2FC.x[i] < -0.25 & DEG.peptide_combined$avg_log2FC.y[i] < -0.25) {
+    DEG.peptide_combined$color[i] <- '> FC in GelMACad'
+    DEG.peptide_combined$order[i] <- 2
+  }
+  if (DEG.peptide_combined$genes[i] %in% unique(append(Oxidative_phosphorylation_pathway$SYMBOL, Metabolic_pathway$SYMBOL))) {
+    DEG.peptide_combined$color[i] <- 'Oxidative phosphorylation GSEA p = 6.7e-06 Metabolic pathway GSEA p = 5.3e-06'
+    DEG.peptide_combined$order[i] <- 3
+  }
+
+}
+DEG.peptide_combined$labels <- ''
+DEG.peptide_combined <- DEG.peptide_combined[order(DEG.peptide_combined$avg_log2FC.x),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.peptide_combined$genes[i])) {
+  DEG.peptide_combined$labels[i] <- DEG.peptide_combined$genes[i]
+  }
+}
+DEG.peptide_combined <- DEG.peptide_combined[order(DEG.peptide_combined$avg_log2FC.x, decreasing = T),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.peptide_combined$genes[i])) {
+  DEG.peptide_combined$labels[i] <- DEG.peptide_combined$genes[i]
+  }
+}
+DEG.peptide_combined <- DEG.peptide_combined[order(DEG.peptide_combined$avg_log2FC.y, decreasing = T),]
+for (i in 1:10){
+  if (!grepl('ENSG',DEG.peptide_combined$genes[i])) {
+  DEG.peptide_combined$labels[i] <- DEG.peptide_combined$genes[i]
+  }
+}
+DEG.peptide_combined <- DEG.peptide_combined[order(DEG.peptide_combined$order),]
+
+pdf("2024.01.30_combined_Volcano_peptide.pdf")
+ggplot(DEG.peptide_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = labels)) +
+  geom_abline(h = 0, col = 'gray') +
+  geom_hline(yintercept = 0, col = 'gray') +
+  geom_vline(xintercept = 0, col = 'gray') +
+  geom_point(aes(color = color), size = 1) +
+  scale_color_manual(values = c('darkturquoise','lightsalmon','gray80','blue')) +
+  geom_text_repel(force = 30,
+                  max.overlaps = 20) +
+  xlim(c(-2,2)) +
+  xlab(expression(Average~Log[2]~Fold~Change~GelMA-Cad^LC~v~GelMA^LC)) +
+  ylim(c(-2,2)) +
+  ylab(expression(Average~Log[2]~Fold~Change~GelMA-Cad^HC~v~GelMA^HC)) +
+  theme_prism() +
+  NoLegend()
+
+###
+# Save datasets
+saveRDS(DEG.GelMA_combined, "2024.01.30_DEG.GelMA_combined.RDS")
+saveRDS(DEG.GelMA_soft_v_GelMACad_soft, "2024.01.30_DEG.GelMA_soft_v_GelMACad_soft.RDS")
+saveRDS(DEG.GelMA_soft_v_Matrigel, "2024.01.30_DEG.GelMA_soft_v_Matrigel.RDS")
+saveRDS(DEG.GelMA_stiff_v_GelMACad_stiff, "2024.01.30_DEG.GelMA_stiff_v_GelMACad_stiff.RDS")
+saveRDS(DEG.GelMA_stiff_v_Matrigel, "2024.01.30_DEG.GelMA_stiff_v_Matrigel.RDS")
+saveRDS(DEG.GelMA_stiff_v_soft, "2024.01.30_DEG.GelMA_stiff_v_soft.RDS")
+saveRDS(DEG.GelMA_v_GelMACad, "2024.01.30_DEG.GelMA_v_GelMACad.RDS")
+saveRDS(DEG.GelMA_v_Matrigel, "2024.01.30_DEG.GelMA_v_Matrigel.RDS" )
+saveRDS(DEG.GelMACad_combined, "2024.01.30_DEG.GelMACad_combined.RDS")
+saveRDS(DEG.GelMACad_soft_v_Matrigel, "2024.01.30_DEG.GelMACad_soft_v_Matrigel.RDS")
+saveRDS(DEG.GelMACad_stiff_v_Matrigel, "2024.01.30_DEG.GelMACad_stiff_v_Matrigel.RDS")
+saveRDS(DEG.GelMACad_stiff_v_soft, "2024.01.30_DEG.GelMACad_stiff_v_soft.RDS")
+saveRDS(DEG.GelMACad_v_Matrigel, "2024.01.30_DEG.GelMACad_v_Matrigel.RDS")
+saveRDS(DEG.peptide_combined, "2024.01.30_DEG.peptide_combined.RDS")
+saveRDS(DEG.stiff_v_soft, "2024.01.30_DEG.stiff_v_soft.RDS")
+saveRDS(DEG.stiffness_combined, "2024.01.30_DEG.stiffness_combined.RDS")
+saveRDS(gsea_DEG.GelMA_v_GelMACad, "2024.01.30_gsea_DEG.GelMA_v_GelMACad.RDS")
+saveRDS(gsea_DEG.GelMA_v_Matrigel, "2024.01.30_gsea_DEG.GelMA_v_Matrigel.RDS" )
+saveRDS(gsea_DEG.GelMACad_v_Matrigel, "2024.01.30_gsea_DEG.GelMACad_v_Matrigel.RDS")
+saveRDS(gsea_DEG.stiff_v_soft, "2024.01.30_gsea_DEG.stiff_v_soft.RDS")
+```
+
