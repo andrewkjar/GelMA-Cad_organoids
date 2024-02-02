@@ -1,0 +1,34 @@
+# Import libraries
+library(Seurat)
+library(SeuratDisk)
+library(ggplot2)
+library(neuMatIdx)
+library(org.Hs.eg.db)
+library(dplyr)
+
+# Import scanpy object and convert to Seurat
+so <- LoadH5Seurat("2023.11.08_adata_concat.h5seurat", meta.data = FALSE)
+metadata <- read.csv("2023.11.10_metadata.csv")
+so <- AddMetaData(so, metadata$cell_type, col.name = 'cell_type')
+so <- AddMetaData(so, metadata$condition, col.name = 'condition')
+so <- AddMetaData(so, metadata$day, col.name = 'day')
+
+master_gene_table <- mapIds(org.Hs.eg.db, keys = rownames(so@assays$RNA@counts), keytype = "SYMBOL", column="ENSEMBL")
+master_gene_table <- as.data.frame(master_gene_table)
+master_gene_table$gene <- rownames(master_gene_table)
+for (i in 1:length(master_gene_table$gene)) {
+  if (is.na(master_gene_table$master_gene_table[i])){
+    master_gene_table$master_gene_table[i] <- master_gene_table$gene[i]
+  }
+}
+
+master_gene_table$master_gene_table <- make.unique(master_gene_table$master_gene_table)
+
+counts <- as.data.frame(so@assays$RNA@counts)
+rownames(counts) <- master_gene_table$master_gene_table
+
+# Calculate Neural Maturation Index
+NMIs <- predictNMI(counts, standardize = F)
+so$NMI <- NMIs$overallNMI$overall
+
+saveRDS(so, "2023.11.13_so_NMI_annotation.RDS")
