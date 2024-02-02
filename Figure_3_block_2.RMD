@@ -74,7 +74,7 @@ subset.obj$condition <- recode(subset.obj$condition,
 # Save seurat object for future use
 saveRDS(subset.obj, "2023.06.13_so.combined_gruffi.RDS")
 
-# Analyze if stressed cells are enriched in a particular sample
+# Analyze if stressed cells are enriched in a particular sample (presented in Supplemental Figure 3)
 gruffi.df <- as.data.frame.matrix(table(combined.obj$orig.ident, combined.obj$is.Stressed) / rowSums(table(combined.obj$orig.ident, combined.obj$is.Stressed)))
 gruffi.df$Condition <- rownames(gruffi.df)
 colnames(gruffi.df) <- c('Not stressed','Stressed','Condition')
