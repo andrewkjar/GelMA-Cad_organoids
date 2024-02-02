@@ -1,0 +1,45 @@
+Purpose: analyse dose-response of organoids to GelMA-Cad v/v percent
+
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(ggbeeswarm)
+
+# Import data and visualize
+df.fluorescence <- read.csv("2024.01.04_mia_fluorescence_data.csv")
+
+head(df.fluorescence)
+df.fluorescence$GelMACad.Concentration <- as.factor(df.fluorescence$GelMACad.Concentration)
+
+pdf("2024.01.04_mia_fluorescent_data_Cad_peptide_optimization.pdf", height = 4, width = 3)
+ggplot(df.fluorescence, aes(x = GelMACad.Concentration, y = Avg.BIIT.Layer.Thickness)) +
+  geom_boxplot(fill = c('lemonchiffon','gold','goldenrod')) +
+  geom_beeswarm(cex = 2) +
+  ylab('Average Beta III Tubulin \n Thickness (microns)') +
+  xlab('Volume Percent \n GelMACad in GelMA') +
+  theme_prism()
+
+ggplot(df.fluorescence, aes(x = GelMACad.Concentration, y = X..Area)) +
+  geom_boxplot(fill = c('lemonchiffon','gold','goldenrod')) +
+  geom_beeswarm(cex = 2) +
+  ylab('Percent Beta III Tubulin Area') +
+  xlab('Volume Percent \n GelMACad in GelMA') +
+  theme_prism()
+
+df.brightfield <- read.csv("2024.01.04_mia_brightfield_data.csv")
+df.brightfield$Concentration <- as.factor(df.brightfield$Concentration)
+
+pdf("2024.01.04_mia_brightfield_data_Cad_peptide_optimization.pdf", height = 4, width = 3)
+ggplot(df.brightfield, aes(x = Concentration, y = Area)) +
+  geom_boxplot(fill = c('lemonchiffon','gold','goldenrod')) +
+  geom_beeswarm(cex = 2) +
+  ylab('Area (pixel units)') +
+  xlab('Volume Percent \n GelMACad in GelMA') +
+  theme_prism()
+
+ggplot(df.brightfield, aes(x = Concentration, y = Circularity)) +
+  geom_boxplot(fill = c('lemonchiffon','gold','goldenrod')) +
+  geom_beeswarm(cex = 2) +
+  ylab('Circularity') +
+  xlab('Volume Percent \n GelMACad in GelMA') +
+  theme_prism()
