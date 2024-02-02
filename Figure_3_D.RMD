@@ -1,0 +1,48 @@
+Purpose: visualize quantification of SATB2 layer thickness in D60 organoids
+
+# Import libraries
+library(ggprism)
+library(ggplot2)
+library(ggbeeswarm)
+library(ggpubr)
+
+# Prep dataframe
+df <- read.csv("2023.09.14_layer_thickness_SATB2.csv")
+df <- df[1:56,7:8]
+df$hydrogel <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)','GelMACad (stiff)','GelMACad (stiff)', 'Matrigel', 'Matrigel', 'Matrigel', 'Matrigel', 'Matrigel','Matrigel','Matrigel','Matrigel','Matrigel','Matrigel','Matrigel','Matrigel','Matrigel', 'Matrigel','Matrigel','Matrigel','Matrigel','Matrigel','Matrigel','GelMA (soft)', 'GelMA (soft)', 'GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (soft)','GelMACad (soft)','GelMACad (soft)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)','GelMACad (stiff)','GelMACad (stiff)','GelMACad (stiff)','GelMA (soft)','GelMA (soft)','GelMA (soft)')
+df <- subset(df, Average.SATB2.layer.thickness != 0) # Remove organoids where no SATB2 was detected
+
+# Run statistics
+aov.results <- aov(Average.SATB2.layer.thickness ~ hydrogel, df)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+tukey.results$hydrogel
+
+# Plot
+df_p_val <- as.data.frame(tukey.results$hydrogel)
+df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
+df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
+df_p_val$y.position <- c(400,400,400,490,400,400,460,400,430,400)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+cairo_pdf("2023.09.14_SATB2_layer_thickness.pdf", width = 4, height = 5)
+ggplot(df, aes(x = hydrogel, y = Average.SATB2.layer.thickness)) +
+  stat_summary(fun.y = mean, fun.ymin = mean, fun.ymax = mean, 
+               geom = 'crossbar', width = 0.4) +
+  geom_quasirandom(size = 4, color = 'black') +
+  geom_quasirandom(size = 3, aes(color = hydrogel)) +
+  scale_color_manual(values = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  ylab('SATB2 Layer Thickness \n(\u03bcm)') +
+  xlab('') +
+  theme_prism() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  scale_x_discrete(labels = c(bquote(GelMA^LC), bquote(GelMA^HC), bquote(GelMA-Cad^LC), bquote(GelMA-Cad^HC),bquote(Matrigel))) +
+  theme(legend.position = 'none')
