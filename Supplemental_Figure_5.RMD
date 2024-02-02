@@ -1,0 +1,40 @@
+Purpose: analysis of image quantification of D90 thin slice organoid images
+
+# Import libraries
+library(ggplot2)
+library(ggbeeswarm)
+library(ggprism)
+library(dplyr)
+
+# Import RELN data, and visualize
+df.RELN <- read.csv("2023.01.17_RELN_quantification_tabulated.csv")
+
+# Run and inspect statistics
+aov.results <- aov(Average.RELN...DAPI.Area ~ Condition, df.RELN)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+
+pdf("2024.01.17_RELN_area.pdf", width = 4, height = 5)
+ggplot(df.RELN, aes(x = Condition, y = Average.RELN...DAPI.Area)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  ylab('RELN+ area / organoid')
+
+# Read in proportion data from cell profiler
+df.props <- read.csv("2024.01.17_CTIP2_SATB2_proportions.csv")
+
+pdf("2024.01.17_CTIP2_SATB2.pdf", width = 4, height = 5)
+ggplot(df.props, aes(x = Condition, y = Average.SATB2...DAPI)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  ylab('SATB2+ nuclei / nuclei')
+
+ggplot(df.props, aes(x = Condition, y = Average.CTIP2...DAPI)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  ylab('CTIP2+ nuclei / nuclei')
