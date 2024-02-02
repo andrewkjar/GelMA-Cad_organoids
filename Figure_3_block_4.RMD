@@ -1,4 +1,4 @@
-Purpose: annotate cells 
+Purpose: annotate cells from D60 organoids.
 
 # Import dataset
 so <- readRDS("2023.06.20_so_pseuodtime.RDS")
