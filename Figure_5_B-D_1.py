@@ -142,3 +142,5 @@ sc.tl.score_genes(adata_concat, gene_list = data['x'].tolist(), score_name = 'GA
 
 data = read_csv("hsa04360.csv")
 sc.tl.score_genes(adata_concat, gene_list = data['x'].tolist(), score_name = 'Axon_guidance_module_score')
+
+# Note: conversion to Seurat object is shown in file: Supplemental_Figure_6.RMD
