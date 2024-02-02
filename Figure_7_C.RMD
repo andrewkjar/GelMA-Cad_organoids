@@ -1,0 +1,46 @@
+Purpose: compare top markers of radial glial clusters to primary dataset
+
+# Import libraries
+library(Seurat)
+library(ggplot2)
+library(pheatmap)
+
+# Import dataset with markers
+RG.markers <- readRDS("/home/kjara/9968-AK-analysis/2023.12.05_D90_120_RG_markers.RDS")
+
+# Import primary dataset
+so.primary <- readRDS("/data/lippmann_lab/Bhaduri_2020/Bhaduri_2020/primary/2023.06.08_primary_so.RDS")
+so.primary.RG <- subset(so.primary, Type == 'Radial Glia' & Subtype != 'Low Quality')
+
+# Split by identity and type, then compute marker genes
+so.primary.RG$condition <- paste(so.primary.RG$Age,so.primary.RG$Subtype)
+Idents(so.primary.RG) <- so.primary.RG$condition
+markers <- FindAllMarkers(so.primary.RG, only.pos = T)
+
+# Save markers
+saveRDS(markers, "2024.01.18_primary_markers.RDS")
+
+# Iterate through comparisons, compute number of shared marker genes
+RG.clusters2 <- c("RG-5","RG-9","RG-6","RG-3","RG-4","RG-10","RG-2")
+RG.conditions2 <- c("6 early","6 oRG","6 vRG","10 early","10 oRG","10 vRG","14 early","14 late","14 oRG","14 vRG",
+                    "18 early","18 late","18 oRG","18 vRG","18 tRG","18 oRG/Astrocyte","22 early","22 late","22 oRG","22 vRG","22 tRG","22 oRG/Astrocyte")
+
+results2 <- matrix(nrow = 22, ncol = 7)
+colnames(results2) <- c("Neurogenic","Ciliated","ECM responding 2","ECM responding 1","Ribosome biogenesis","Apoptotic","Hypoxic")
+rownames(results2) <- RG.conditions2
+
+for (i in 1:length(RG.clusters2)) {
+  for (j in 1:length(RG.conditions2)) {
+    results2[j,i] <- length(intersect(subset(RG.markers, cluster == RG.clusters2[i])$gene, subset(markers, cluster == RG.conditions2[j])$gene))
+  }
+}
+
+# Visualize
+pdf("2024.01.18_pheatmap_RG_correspondance_to_bhaduri_primary_clusters.pdf")
+pheatmap(results2, 
+         color = colorRampPalette(c('white','red'))(100),
+         cluster_rows = F,
+         cluster_cols = F,
+         border_color = "white",
+         angle_col = 45)
+
