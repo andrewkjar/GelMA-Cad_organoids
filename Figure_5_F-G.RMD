@@ -1,0 +1,62 @@
+Purpose: analyze the D90 KOLF2.1J derived single cell results
+
+# Import libraries
+library(Seurat)
+
+# Read in data
+so.1.data <- Read10X("/data/lippmann_lab/10901-AK/10901-AK-1_S1_L005_results/filtered_matrix/sensitivity_5")
+so.1 <- CreateSeuratObject(counts = so.1.data, min.cells = 3, min.features = 200)
+so.1$orig.ident <- 'GelMACad_HC'
+rm(so.1.data)
+
+so.2.data <- Read10X("/data/lippmann_lab/10901-AK/10901-AK-2_S1_L005_results/filtered_matrix/sensitivity_5")
+so.2 <- CreateSeuratObject(counts = so.2.data, min.cells = 3, min.features = 200)
+so.2$orig.ident <- 'GelMACad_LC'
+rm(so.2.data)
+
+so.combined.KOLF <- merge(so.1, so.2) 
+
+# Run quality control filtering
+so.combined.KOLF[["percent.mt"]] <- PercentageFeatureSet(so.combined.KOLF, pattern = "^MT-")
+so.combined.KOLF.cleaned <- subset(so.combined.KOLF, subset = nFeature_RNA > 1000 & nFeature_RNA < 4000)
+
+# Process data, do dimension reduction
+so.combined.KOLF.cleaned <- NormalizeData(so.combined.KOLF.cleaned)
+so.combined.KOLF.cleaned <- FindVariableFeatures(so.combined.KOLF.cleaned, selection.method = "vst", nfeatures = 2000)
+so.combined.KOLF.cleaned <- ScaleData(so.combined.KOLF.cleaned, verbose = FALSE)
+so.combined.KOLF.cleaned <- RunPCA(so.combined.KOLF.cleaned, npcs = 50, verbose = FALSE)
+so.combined.KOLF.cleaned <- RunUMAP(so.combined.KOLF.cleaned, reduction = "pca", dims = 1:50)
+so.combined.KOLF.cleaned <- FindNeighbors(so.combined.KOLF.cleaned, reduction = "pca", dims = 1:50)
+so.combined.KOLF.cleaned <- FindClusters(so.combined.KOLF.cleaned, resolution = 2)
+
+# Annotate cells
+so.combined.KOLF.cleaned$cell_type <- so.combined.KOLF.cleaned$seurat_clusters
+so.combined.KOLF.cleaned$cell_type <- recode(so.combined.KOLF.cleaned$cell_type, 
+                                             "0" = "Deep layer neurons",
+                                             "1" = "Deep layer neurons",
+                                             "2" = "Upper layer neurons",
+                                             "3" = "Upper layer neurons",
+                                             "4" = "Non-specified neurons",
+                                             "5" = "Non-specified neurons",
+                                             "6" = "Non-specified neurons",
+                                             "7" = "Radial glia",
+                                             "8" = "Radial glia",
+                                             "9" = "Radial glia",
+                                             "10" = "Glioblast / Astrocytes",
+                                             "11" = "Non-specified neurons",
+                                             "12" = "DLX5+ Inhibitory neurons",
+                                             "13" = "Intermediate progenitors / cycling",
+                                             "14" = "Intermediate progenitors / cycling",
+                                             "15" = "Upper layer neurons",
+                                             "16" = "Non-specified neurons",
+                                             "17" = "Upper layer neurons",
+                                             "18" = "RELN+ Inhibitory neurons")
+
+# Visualize
+pdf("2023.12.27_cell_types_KOLF_D90.pdf", width = 8, height = 6)
+DimPlot(so.combined.KOLF.cleaned, group.by = 'cell_type',
+        cols = c('mediumblue','midnightblue','darkturquoise','pink','deeppink','darkgreen','palegreen','mediumseagreen'))
+DimPlot(so.combined.KOLF.cleaned, group.by = 'crosslinker', cols = c('gray','black'))
+
+# Save dataset
+saveRDS(so.combined.KOLF.cleaned, "2023.12.27_annotated_cell_types_D90_KOLF_so.RDS")
