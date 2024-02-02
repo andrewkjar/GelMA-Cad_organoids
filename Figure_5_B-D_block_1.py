@@ -20,86 +20,85 @@ adata1.obs["crosslinker"] = 'HC'
 adata1.obs["matrix"] = 'GelMA'
 
 adata2 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10490-AK/10490-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',                # use gene symbols for the variable names (variables-axis index)
-    cache=True)                              # write a cache file for faster subsequent reading
+    "/data/lippmann_lab/10490-AK/10490-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5", 
+    var_names='gene_symbols',                
+    cache=True)                              
 adata2.obs["condition"] = 'D90 GelMA_LC'
 adata2.obs["day"] = 'D90'
 adata2.obs["crosslinker"] = 'LC'
 adata2.obs["matrix"] = 'GelMA'
 
 adata3 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10191-AK/10191-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata3.obs["condition"] = 'D90 GelMA-Cad_LC'  # Replace 'adata2' with 'adata3'
-adata3.obs["day"] = 'D90'  # Replace 'adata2' with 'adata3'
-adata3.obs["crosslinker"] = 'LC'  # Replace 'adata2' with 'adata3'
-adata3.obs["matrix"] = 'GelMA-Cad'  # Replace 'adata2' with 'adata3'
+    "/data/lippmann_lab/10191-AK/10191-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5", 
+    var_names='gene_symbols',  
+    cache=True) 
+adata3.obs["condition"] = 'D90 GelMA-Cad_LC' 
+adata3.obs["day"] = 'D90' 
+adata3.obs["crosslinker"] = 'LC'  
+adata3.obs["matrix"] = 'GelMA-Cad' 
 
 adata4 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10191-AK/10191-AK-0004_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata4.obs["condition"] = 'D90 GelMA-Cad_HC'  # Replace 'adata2' with 'adata4'
-adata4.obs["day"] = 'D90'  # Replace 'adata2' with 'adata4'
-adata4.obs["crosslinker"] = 'HC'  # Replace 'adata2' with 'adata4'
-adata4.obs["matrix"] = 'GelMA-Cad'  # Replace 'adata2' with 'adata4'
-adata4.write(results_file)  # Replace 'adata2' with 'adata4'
+    "/data/lippmann_lab/10191-AK/10191-AK-0004_S1_L005_results/filtered_matrix/sensitivity_5",  
+    var_names='gene_symbols',  
+    cache=True)  
+adata4.obs["condition"] = 'D90 GelMA-Cad_HC' 
+adata4.obs["day"] = 'D90' 
+adata4.obs["crosslinker"] = 'HC' 
+adata4.obs["matrix"] = 'GelMA-Cad'
 
 adata5 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10191-AK/10191-AK-0005_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata5.obs["condition"] = 'D90 Matrigel'  # Replace 'adata2' with 'adata5'
-adata5.obs["day"] = 'D90'  # Replace 'adata2' with 'adata5'
-adata5.obs["crosslinker"] = 'NA'  # Replace 'adata2' with 'adata5'
-adata5.obs["matrix"] = 'Matrigel'  # Replace 'adata2' with 'adata5'
+    "/data/lippmann_lab/10191-AK/10191-AK-0005_S1_L005_results/filtered_matrix/sensitivity_5", 
+    var_names='gene_symbols',
+    cache=True)  
+adata5.obs["condition"] = 'D90 Matrigel'  
+adata5.obs["day"] = 'D90' 
+adata5.obs["crosslinker"] = 'NA'  
+adata5.obs["matrix"] = 'Matrigel' 
 
 adata6 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10579-AK/10579-AK-0001_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata6.obs["condition"] = 'D120 GelMA_HC'  # Replace 'adata2' with 'adata6'
-adata6.obs["day"] = 'D120'  # Replace 'adata2' with 'adata6'
-adata6.obs["crosslinker"] = 'HC'  # Replace 'adata2' with 'adata6'
-adata6.obs["matrix"] = 'GelMA'  # Replace 'adata2' with 'adata6'
+    "/data/lippmann_lab/10579-AK/10579-AK-0001_S1_L005_results/filtered_matrix/sensitivity_5",
+    var_names='gene_symbols', 
+    cache=True)  
+adata6.obs["condition"] = 'D120 GelMA_HC' 
+adata6.obs["day"] = 'D120' 
+adata6.obs["crosslinker"] = 'HC' 
+adata6.obs["matrix"] = 'GelMA'  
 
 adata7 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10579-AK/10579-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata7.obs["condition"] = 'D120 GelMA_LC'  # Replace 'adata2' with 'adata7'
-adata7.obs["day"] = 'D120'  # Replace 'adata2' with 'adata7'
-adata7.obs["crosslinker"] = 'LC'  # Replace 'adata2'
+    "/data/lippmann_lab/10579-AK/10579-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5",  
+    var_names='gene_symbols',  
+    cache=True)  
+adata7.obs["condition"] = 'D120 GelMA_LC'  
+adata7.obs["day"] = 'D120' 
+adata7.obs["crosslinker"] = 'LC'
 adata7.obs["matrix"] = "GelMA"
 
 adata8 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10579-AK/10579-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata8.obs["condition"] = 'D120 Matrigel'  # Replace 'adata2' with 'adata8'
-adata8.obs["day"] = 'D120'  # Replace 'adata2' with 'adata8'
-adata8.obs["crosslinker"] = 'NA'  # Replace 'adata2' with 'adata8'
-adata8.obs["matrix"] = 'Matrigel'  # Replace 'adata2' with 'adata8'
+    "/data/lippmann_lab/10579-AK/10579-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5", 
+    var_names='gene_symbols', 
+    cache=True)  
+adata8.obs["condition"] = 'D120 Matrigel'
+adata8.obs["day"] = 'D120' 
+adata8.obs["crosslinker"] = 'NA'  
+adata8.obs["matrix"] = 'Matrigel' 
 
 adata9 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10191-AK/10191-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata9.obs["condition"] = 'D120 GelMA-Cad_HC'  # Replace 'adata2' with 'adata9'
-adata9.obs["day"] = 'D120'  # Replace 'adata2' with 'adata9'
-adata9.obs["crosslinker"] = 'HC'  # Replace 'adata2' with 'adata9'
-adata9.obs["matrix"] = 'GelMA-Cad'  # Replace 'adata2' with 'adata9'
+    "/data/lippmann_lab/10191-AK/10191-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5",  
+    var_names='gene_symbols', 
+    cache=True) 
+adata9.obs["condition"] = 'D120 GelMA-Cad_HC'
+adata9.obs["day"] = 'D120' 
+adata9.obs["crosslinker"] = 'HC' 
+adata9.obs["matrix"] = 'GelMA-Cad'  
 
 adata10 = sc.read_10x_mtx(
-    "/data/lippmann_lab/10191-AK/10191-AK-0001_S1_L005_results/filtered_matrix/sensitivity_5",  # the directory with the `.mtx` file
-    var_names='gene_symbols',  # use gene symbols for the variable names (variables-axis index)
-    cache=True)  # write a cache file for faster subsequent reading
-adata10.obs["condition"] = 'D120 GelMA-Cad_LC'  # Replace 'adata2' with 'adata10'
-adata10.obs["day"] = 'D120'  # Replace 'adata2' with 'adata10'
-adata10.obs["crosslinker"] = 'LC'  # Replace 'adata2' with 'adata10'
-adata10.obs["matrix"] = 'GelMA-Cad'  # Replace 'adata2' with 'adata10'
+    "/data/lippmann_lab/10191-AK/10191-AK-0001_S1_L005_results/filtered_matrix/sensitivity_5", 
+    var_names='gene_symbols',  
+    cache=True)  
+adata10.obs["condition"] = 'D120 GelMA-Cad_LC'  
+adata10.obs["day"] = 'D120' 
+adata10.obs["crosslinker"] = 'LC' 
+adata10.obs["matrix"] = 'GelMA-Cad'  
 
 adata_concat = ad.concat([adata1, adata2, adata3, adata4, adata5, adata6, adata7, adata8, adata9, adata10])
 adata_concat.obs_names_make_unique()
