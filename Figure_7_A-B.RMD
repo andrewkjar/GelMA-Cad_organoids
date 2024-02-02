@@ -1,0 +1,32 @@
+# Import libraries
+library(Seurat)
+library(ggplot2)
+
+# Import data and subset radial glia
+so.old <- readRDS("/home/kjara/10191-AK-analysis/2023.11.13_so_w_NMI.RDS")
+so.RG.90_120 <- subset(so.old, cell_type %in% c('RG-1','RG-2','RG-3','RG-4','RG-5','RG-6','RG-7','RG-8','RG-9','RG-10','RG-11'))
+
+# Find top marker genes for radial glia clusters
+Idents(so.RG.90_120) <- so.RG.90_120$cell_type
+RG.markers <- FindAllMarkers(so.RG.90_120, only.pos = T)
+
+# Save marker gene output
+saveRDS(RG.markers, "2023.12.05_D90_120_RG_markers.RDS")
+
+# Annotate cell types, based on gene onotology of marker genes
+so.RG$RG_type <- so.RG$cell_type
+so.RG$RG_type <- recode(so.RG$RG_type,
+                         "RG-1" = "Radial glia",
+                         "RG-2" = "Hypoxic",
+                         "RG-3" = "ECM responding 2",
+                         "RG-4" = "Ribosome biogenesis",
+                         "RG-5" = "Neurogenic",
+                         "RG-6" = "ECM responding 1",
+                         "RG-7" = "Radial glia",
+                         "RG-8" = "Radial glia",
+                         "RG-9" = "Ciliated",
+                         "RG-10" = "Apoptotic",
+                         "RG-11" = "Radial glia")
+
+levels <- c('Radial glia','Apoptotic','Ciliated','ECM responding 2','ECM responding 1','Hypoxic','Neurogenic','Ribosome biogenesis')
+so.RG$RG_type <- factor(x = so.RG$RG_type, levels = levels) 
