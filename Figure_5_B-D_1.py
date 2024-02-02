@@ -133,7 +133,7 @@ cell_names = ["MC-1","ChP-1","RG-1","GB","ChP-2","N-1","RG-2","DLExN","ULExN","R
              "IPC-2","RELNInH","IPC-3","MC-3","RG-10","MC-4","N-4","RG-11","N-5","MC-5",
              "Unknown-1","ChP-3","ChP-4","IPC-4","MC-6","MC-7","MC-8","IPC-5","Unknown-2","Unknown-3"]
 
-# Add scores for modules
+# Add scores for modules (displayed in Supplemental Figure 6)
 data = read_csv("hsa04724.csv")
 sc.tl.score_genes(adata_concat, gene_list = data['x'].tolist(), score_name = 'Glutamatergic_synapse_module_score')
 
