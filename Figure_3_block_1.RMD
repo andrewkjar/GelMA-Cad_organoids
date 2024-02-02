@@ -1,4 +1,4 @@
-Purpose: set up the seurat object from the PIPseeker outputs, using minimal filtering.
+Purpose: set up the seurat object from the PIPseeker outputs.
 
 # Import necessary libraries
 library(Seurat)
