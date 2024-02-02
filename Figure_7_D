@@ -1,0 +1,23 @@
+Purpose: inspect correlation between radial glia phenotypes and other cells types
+
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(dplyr)
+library(ggpmisc)
+
+# Import dataset
+df.RG_MC <- read.csv("2024.01.18_RG3_MC_props.csv")
+df.RG_MC$day <- as.factor(df.RG_MC$day)
+
+# Visualize
+pdf("2024.01.18_MC_RG_correlation_plot.pdf", width = 6, height = 4)
+ggplot(df.RG_MC, aes(x = Prop.RG.3, y = Prop.MC)) +
+  geom_smooth(method=lm, color = 'grey', fill = 'lightgrey') +
+  geom_point(aes(shape = day, color = matrix), size = 4) +
+  scale_shape_manual(values=c(19, 15)) +
+  scale_color_manual(values=c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  xlab('Proportion ECM responding 1 RG / All RG') +
+  ylab('Proportion MC / All Cells') +
+  stat_poly_eq() +
+  theme_prism()
