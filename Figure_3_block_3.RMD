@@ -55,12 +55,12 @@ fine_labels <- as.character(seurat$label_fine)
 df.pseudo <- as.data.frame(cbind(conditions, cbind(pseudotimes, fine_labels)))
 df.pseudo$pseudotimes <- as.numeric(df.pseudo$pseudotimes)
 
-## Deep layer excitatory neurons, run ANOVA and visualize results
-df.pseudo.DLEN <- subset(df.pseudo, fine_labels %in% c('Deep layer excitatory neuron'))
-res.aov.DLEN <- aov(pseudotimes ~ conditions, df.pseudo.DLEN)
-tukey.DLEN <- TukeyHSD(res.aov.DLEN)
+## Excitatory neurons, run ANOVA and visualize results
+df.pseudo.EN <- subset(df.pseudo, fine_labels %in% c('Deep layer excitatory neuron','Upper layer excitatory neuron','Non-specified neuron'))
+res.aov.EN <- aov(pseudotimes ~ conditions, df.pseudo.EN)
+tukey.EN <- TukeyHSD(res.aov.EN)
 
-df_p_val <- as.data.frame(tukey.DLEN$conditions)
+df_p_val <- as.data.frame(tukey.EN$conditions)
 df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
 df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
 df_p_val$y.position <- c(20,20,20,25,20,20,28,20,31,34)
@@ -72,8 +72,8 @@ for (i in 1:length(df_p_val$diff)) {
   }
 }
 
-pdf("2023.06.21_vlnPlot_pseudotime_DLEN.pdf")
-ggplot(df.pseudo.DLEN, aes(x = conditions, y = pseudotimes)) +
+pdf("2023.06.21_vlnPlot_pseudotime_EN.pdf")
+ggplot(df.pseudo.EN, aes(x = conditions, y = pseudotimes)) +
   geom_violin(scale = "width") +
   geom_boxplot(width = 0.3) +
   scale_x_discrete(limits = rev) +
@@ -81,109 +81,5 @@ ggplot(df.pseudo.DLEN, aes(x = conditions, y = pseudotimes)) +
   theme(axis.text.x = element_text(angle = 45)) +
   xlab('') +
   ylab('Pseudotime') +
-  ggtitle('Deep layer excitatory neurons') +
   add_pvalue(df_p_val, label = 'p adj round') +
   ylim(c(0,35))
-
-ggplot(df.pseudo.DLEN, aes(x = conditions, y = pseudotimes)) +
-  geom_violin(aes(fill = conditions)) +
-  geom_boxplot(width = 0.3) +
-  scale_x_discrete(limits = rev) +
-  theme_prism() +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab('') +
-  ylab('Pseudotime') +
-  ggtitle('Deep layer excitatory neurons') +
-  add_pvalue(df_p_val, label = 'p adj round') +
-  scale_fill_manual(values = c("darkturquoise","turquoise","goldenrod","gold","salmon")) +
-  ylim(c(0,35)) +
-  NoLegend()
-
-## Outer radial glia, run ANOVA and visualize results
-df.pseudo.ORG <- subset(df.pseudo, fine_labels %in% c('Outer radial glia'))
-res.aov.ORG <- aov(pseudotimes ~ conditions, df.pseudo.ORG)
-tukey.ORG <- TukeyHSD(res.aov.ORG)
-
-df_p_val <- as.data.frame(tukey.ORG$conditions)
-df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
-df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
-df_p_val$y.position <- c(20,20,20,25,20,20,28,20,31,34)
-df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
-df_p_val <- subset(df_p_val, `p adj` < 0.05)
-for (i in 1:length(df_p_val$diff)) {
-  if (df_p_val$`p adj round`[i] == 0) {
-    df_p_val$`p adj round`[i] = '< 0.0001' 
-  }
-}
-
-pdf("2023.06.21_vlnPlot_pseudotime_ORG.pdf")
-ggplot(df.pseudo.ORG, aes(x = conditions, y = pseudotimes)) +
-  geom_violin(scale = "width") +
-  geom_boxplot(width = 0.3) +
-  scale_x_discrete(limits = rev) +
-  theme_prism() +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab('') +
-  ylab('Pseudotime') +
-  ggtitle('Outer radial glia') +
-  add_pvalue(df_p_val, label = 'p adj round') +
-  ylim(c(0,35))
-
-## Intermediate progenitor cells (new), run ANOVA and visualize results
-df.pseudo.IPC <- subset(df.pseudo, fine_labels %in% c('IPC-new'))
-res.aov.IPC <- aov(pseudotimes ~ conditions, df.pseudo.IPC)
-tukey.IPC <- TukeyHSD(res.aov.IPC)
-
-df_p_val <- as.data.frame(tukey.IPC$conditions)
-df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
-df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
-df_p_val$y.position <- c(20,21,20,25,20,20,28,20,30,34)
-df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
-df_p_val <- subset(df_p_val, `p adj` < 0.05)
-for (i in 1:length(df_p_val$diff)) {
-  if (df_p_val$`p adj round`[i] == 0) {
-    df_p_val$`p adj round`[i] = '< 0.0001' 
-  }
-}
-
-pdf("2023.06.21_vlnPlot_pseudotime_IPC_new.pdf")
-ggplot(df.pseudo.IPC, aes(x = conditions, y = pseudotimes)) +
-  geom_violin(scale = "width") +
-  geom_boxplot(width = 0.3) +
-  scale_x_discrete(limits = rev) +
-  theme_prism() +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab('') +
-  ylab('Pseudotime') +
-  ggtitle('IPC-new') +
-  add_pvalue(df_p_val, label = 'p adj round') +
-  ylim(c(0,35))
-
-## Full dataset, run ANOVA and visualize results
-res.aov <- aov(pseudotimes ~ conditions, df.pseudo)
-tukey <- TukeyHSD(res.aov)
-
-df_p_val <- as.data.frame(tukey$conditions)
-df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
-df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
-df_p_val$y.position <- c(15,30,18,21,30,30,24,30,28,32)
-df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
-df_p_val <- subset(df_p_val, `p adj` < 0.05)
-for (i in 1:length(df_p_val$diff)) {
-  if (df_p_val$`p adj round`[i] == 0) {
-    df_p_val$`p adj round`[i] = '< 0.0001' 
-  }
-}
-
-pdf("2023.06.21_vlnPlot_pseudotime_all_cells.pdf")
-ggplot(df.pseudo.IPC, aes(x = conditions, y = pseudotimes)) +
-  geom_violin(scale = "width") +
-  geom_boxplot(width = 0.3) +
-  scale_x_discrete(limits = rev) +
-  theme_prism() +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab('') +
-  ylab('Pseudotime') +
-  ggtitle('All cells') +
-  add_pvalue(df_p_val, label = 'p adj round') +
-  ylim(c(0,38))
