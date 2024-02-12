@@ -427,5 +427,3 @@ saveRDS(gsea_DEG.GelMA_v_GelMACad, "2024.01.30_gsea_DEG.GelMA_v_GelMACad.RDS")
 saveRDS(gsea_DEG.GelMA_v_Matrigel, "2024.01.30_gsea_DEG.GelMA_v_Matrigel.RDS" )
 saveRDS(gsea_DEG.GelMACad_v_Matrigel, "2024.01.30_gsea_DEG.GelMACad_v_Matrigel.RDS")
 saveRDS(gsea_DEG.stiff_v_soft, "2024.01.30_gsea_DEG.stiff_v_soft.RDS")
-```
-
