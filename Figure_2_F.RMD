@@ -5,7 +5,6 @@ library(ggplot2)
 library(ggprism)
 library(ggbeeswarm)
 
-
 # Import dataset for BIIIT width
 df <- read.csv("2023.07.11_compiled_organoid_BIIIT.csv")
 df <- subset(df, Matrix != '')
@@ -40,8 +39,6 @@ ggplot(df, aes(x = Matrix, y = Average.Length..um.)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   add_pvalue(df_p_val, label = 'p adj round') +
   ylim(c(0,340))
-
----
 
 # Import dataset for percent area
 df <- read.csv("2023.09.27_bIIIT_area_D30.csv")
