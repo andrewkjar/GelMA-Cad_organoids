@@ -54,32 +54,3 @@ pseudotimes <- seurat$pseudotime
 fine_labels <- as.character(seurat$label_fine)
 df.pseudo <- as.data.frame(cbind(conditions, cbind(pseudotimes, fine_labels)))
 df.pseudo$pseudotimes <- as.numeric(df.pseudo$pseudotimes)
-
-## Excitatory neurons, run ANOVA and visualize results
-df.pseudo.EN <- subset(df.pseudo, fine_labels %in% c('Deep layer excitatory neuron','Upper layer excitatory neuron','Non-specified neuron'))
-res.aov.EN <- aov(pseudotimes ~ conditions, df.pseudo.EN)
-tukey.EN <- TukeyHSD(res.aov.EN)
-
-df_p_val <- as.data.frame(tukey.EN$conditions)
-df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
-df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
-df_p_val$y.position <- c(20,20,20,25,20,20,28,20,31,34)
-df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
-df_p_val <- subset(df_p_val, `p adj` < 0.05)
-for (i in 1:length(df_p_val$diff)) {
-  if (df_p_val$`p adj round`[i] == 0) {
-    df_p_val$`p adj round`[i] = '< 0.0001' 
-  }
-}
-
-pdf("2023.06.21_vlnPlot_pseudotime_EN.pdf")
-ggplot(df.pseudo.EN, aes(x = conditions, y = pseudotimes)) +
-  geom_violin(scale = "width") +
-  geom_boxplot(width = 0.3) +
-  scale_x_discrete(limits = rev) +
-  theme_prism() +
-  theme(axis.text.x = element_text(angle = 45)) +
-  xlab('') +
-  ylab('Pseudotime') +
-  add_pvalue(df_p_val, label = 'p adj round') +
-  ylim(c(0,35))
