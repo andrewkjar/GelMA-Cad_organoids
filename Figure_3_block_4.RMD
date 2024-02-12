@@ -53,11 +53,11 @@ df.pseudo <- as.data.frame(cbind(conditions, cbind(pseudotimes, fine_labels)))
 df.pseudo$pseudotimes <- as.numeric(df.pseudo$pseudotimes)
 
 ## Subset neurons, run ANOVA and visualize results
-df.pseudo.DLEN <- subset(df.pseudo, fine_labels %in% c('Deep layer neuron','Upper layer neuron','Non-specified neuron'))
-res.aov.DLEN <- aov(pseudotimes ~ conditions, df.pseudo.DLEN)
-tukey.DLEN <- TukeyHSD(res.aov.DLEN)
+df.pseudo.EL <- subset(df.pseudo, fine_labels %in% c('Deep layer neuron','Upper layer neuron','Non-specified neuron'))
+res.aov.EL <- aov(pseudotimes ~ conditions, df.pseudo.EL)
+tukey.EL <- TukeyHSD(res.aov.EL)
 
-df_p_val <- as.data.frame(tukey.DLEN$conditions)
+df_p_val <- as.data.frame(tukey.EL$conditions)
 df_p_val$group1 <- c('GelMA (stiff)','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (soft)','GelMACad (stiff)','Matrigel','GelMACad (stiff)','Matrigel','Matrigel')
 df_p_val$group2 <- c('GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (soft)','GelMA (stiff)','GelMA (stiff)','GelMA (stiff)','GelMACad (soft)','GelMACad (soft)','GelMACad (stiff)')
 df_p_val$y.position <- c(24,27,20,30,20,20,33,20,36,40)
@@ -70,7 +70,7 @@ for (i in 1:length(df_p_val$diff)) {
 }
 
 pdf("2024.01.30_vlnPlot_pseudotime.pdf", width = 5, height = 5)
-ggplot(df.pseudo.DLEN, aes(x = conditions, y = pseudotimes)) +
+ggplot(df.pseudo.EL, aes(x = conditions, y = pseudotimes)) +
   geom_violin(aes(fill = conditions)) +
   geom_boxplot(width = 0.3) +
   scale_x_discrete(limits = rev) +
