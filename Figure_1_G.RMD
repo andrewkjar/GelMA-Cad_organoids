@@ -1,11 +1,5 @@
-```{r}
-getwd()
-setwd("/Users/lippmannlab/kjara")
-```
-
-
 Purpose: calculate DEGs between samples
-```{r}
+
 # Import necessary libraries
 library(Seurat)
 library(dplyr)
@@ -17,18 +11,10 @@ library(EnhancedVolcano)
 library(ggprism)
 library(ggrepel)
 library(ggpubr)
-```
-```{r}
+
 # Import and prep dataset
 so <- readRDS("2024.04.17_so_organoids_D21.RDS")
-```
 
-```{r}
-table(so$orig.ident, so$course_cell_type)
-```
-
-
-```{r}
 so$Matrix <- so$orig.ident
 so$Matrix <- recode(so$Matrix,
                               "GelMA_HC" = "GelMA",
@@ -45,13 +31,12 @@ so$stiffness <- recode(so$stiffness,
                               "GelMACad_LC" = "soft",
                               "Matrigel" = "Matrigel")
 
-so.DLEN <- subset(so, course_cell_type%in% c("Radial glia"))
-```
+so.RG <- subset(so, course_cell_type%in% c("Radial glia"))
 
-```{r}
+
 # Main comparison: GelMA v Matrigel
-Idents(so.DLEN) <- so.DLEN$Matrix
-DEG.GelMA_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMA', ident.2 = 'Matrigel')
+Idents(so.RG) <- so.RG$Matrix
+DEG.GelMA_v_Matrigel <- FindMarkers(so.RG, ident.1 = 'GelMA', ident.2 = 'Matrigel')
 
 # Pathway analysis 
 converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
@@ -73,22 +58,15 @@ gsea_DEG.GelMA_v_Matrigel <- gseKEGG(geneList = geneList,
               verbose      = FALSE)
 
 gsea_DEG.GelMA_v_Matrigel@result
-```
-```{r}
-subset(gsea_DEG.GelMA_v_Matrigel@result, Description == 'Ribosome')[,11]
-```
 
-```{r}
 # Manually type out pathway genes from the GSEA table for pathways of interest
 Ribosome_pathway <- subset(converted.symbols, ENTREZID %in% c("6209","6159","6146","6143","6201","6157","6160","6130","6133","6228","6137","6161","6210","7311","4736","6125","11224","6165","6141","6223","6135","6191","25873","6234","6173","6202","6193","6170","100529239","6181","6204","5"))
 
 # Sub comparisons
-Idents(so.DLEN) <- so.DLEN$orig.ident
-DEG.GelMA_soft_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMA_LC', ident.2 = 'Matrigel', logfc.threshold = 0)
-DEG.GelMA_stiff_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMA_HC', ident.2 = 'Matrigel', logfc.threshold = 0)
-```
+Idents(so.RG) <- so.RG$orig.ident
+DEG.GelMA_soft_v_Matrigel <- FindMarkers(so.RG, ident.1 = 'GelMA_LC', ident.2 = 'Matrigel', logfc.threshold = 0)
+DEG.GelMA_stiff_v_Matrigel <- FindMarkers(so.RG, ident.1 = 'GelMA_HC', ident.2 = 'Matrigel', logfc.threshold = 0)
 
-```{r}
 # Plotting
 DEG.GelMA_soft_v_Matrigel$genes <- rownames(DEG.GelMA_soft_v_Matrigel)
 DEG.GelMA_stiff_v_Matrigel$genes <- rownames(DEG.GelMA_stiff_v_Matrigel)
@@ -146,12 +124,11 @@ ggplot(DEG.GelMA_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = label
   ylab(expression(Average~Log[2]~Fold~Change~Matrigel~v~GelMA^HC)) +
   theme_prism() +
   NoLegend()
-```
 
-```{r}
+
 # Main comparison: GelMACad v Matrigel
-Idents(so.DLEN) <- so.DLEN$Matrix
-DEG.GelMACad_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMACad', ident.2 = 'Matrigel')
+Idents(so.RG) <- so.RG$Matrix
+DEG.GelMACad_v_Matrigel <- FindMarkers(so.RG, ident.1 = 'GelMACad', ident.2 = 'Matrigel')
 
 # Pathway analysis 
 converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
@@ -173,22 +150,16 @@ gsea_DEG.GelMACad_v_Matrigel <- gseKEGG(geneList = geneList,
               verbose      = FALSE)
 
 gsea_DEG.GelMACad_v_Matrigel@result
-```
-```{r}
-subset(gsea_DEG.GelMACad_v_Matrigel@result, Description == 'Ribosome')[,11]
-```
 
-```{r}
 # Manually type out pathway genes from the GSEA table for pathways of interest
 Ribosome_pathway <- subset(converted.symbols, ENTREZID %in% c('6188','6207','6136','6176','6175','6204','6141','4736','6228','6130','7311','6158','6161','9045','2197','6191','11224','6138','6157','6170','6143','6135','6168','6202','6181','6224','6169','6155','6193','6152','6223','6160','6227','6218','6206','51065','9349','6154','6156','6205','6230','6217','6139','6229'))
 
 
 # Sub comparisons
-Idents(so.DLEN) <- so.DLEN$orig.ident
-DEG.GelMACad_soft_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMACad_LC', ident.2 = 'Matrigel', logfc.threshold = 0)
-DEG.GelMACad_stiff_v_Matrigel <- FindMarkers(so.DLEN, ident.1 = 'GelMACad_HC', ident.2 = 'Matrigel', logfc.threshold = 0)
-```
-```{r}
+Idents(so.RG) <- so.RG$orig.ident
+DEG.GelMACad_soft_v_Matrigel <- FindMarkers(so.RG, ident.1 = 'GelMACad_LC', ident.2 = 'Matrigel', logfc.threshold = 0)
+DEG.GelMACad_stiff_v_Matrigel <- FindMarkers(so.RG, ident.1 = 'GelMACad_HC', ident.2 = 'Matrigel', logfc.threshold = 0)
+
 # Plotting
 DEG.GelMACad_soft_v_Matrigel$genes <- rownames(DEG.GelMACad_soft_v_Matrigel)
 DEG.GelMACad_stiff_v_Matrigel$genes <- rownames(DEG.GelMACad_stiff_v_Matrigel)
@@ -246,12 +217,11 @@ ggplot(DEG.GelMACad_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = la
   ylab(expression(Average~Log[2]~Fold~Change~Matrigel~v~GelMA-Cad^HC)) +
   theme_prism() +
   NoLegend()
-```
 
-```{r}
+
 # Main comparison: Stiff v Soft
-Idents(so.DLEN) <- so.DLEN$stiffness
-DEG.stiff_v_soft <- FindMarkers(so.DLEN, ident.1 = 'stiff', ident.2 = 'soft')
+Idents(so.RG) <- so.RG$stiffness
+DEG.stiff_v_soft <- FindMarkers(so.RG, ident.1 = 'stiff', ident.2 = 'soft')
 
 # Pathway analysis 
 converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
@@ -274,21 +244,15 @@ gsea_DEG.stiff_v_soft <- gseKEGG(geneList = geneList,
               verbose      = FALSE)
 
 gsea_DEG.stiff_v_soft@result
-```
-```{r}
-subset(gsea_DEG.stiff_v_soft@result, Description == 'Axon guidance')[,11]
 
 # Manually type out pathway genes from the GSEA table for pathways of interest
 Axon_guidance_pathway <- subset(converted.symbols, ENTREZID %in% c('9353','6586','1948','1630','56288','5063','2048','9901','2045'))
-```
 
-```{r}
 # Sub comparisons
-Idents(so.DLEN) <- so.DLEN$orig.ident
-DEG.GelMA_stiff_v_soft <- FindMarkers(so.DLEN, ident.1 = 'GelMA_HC', ident.2 = 'GelMA_LC', logfc.threshold = 0)
-DEG.GelMACad_stiff_v_soft <- FindMarkers(so.DLEN, ident.1 = 'GelMACad_HC', ident.2 = 'GelMACad_LC', logfc.threshold = 0)
-```
-```{r}
+Idents(so.RG) <- so.RG$orig.ident
+DEG.GelMA_stiff_v_soft <- FindMarkers(so.RG, ident.1 = 'GelMA_HC', ident.2 = 'GelMA_LC', logfc.threshold = 0)
+DEG.GelMACad_stiff_v_soft <- FindMarkers(so.RG, ident.1 = 'GelMACad_HC', ident.2 = 'GelMACad_LC', logfc.threshold = 0)
+
 # Plotting
 DEG.GelMA_stiff_v_soft$genes <- rownames(DEG.GelMA_stiff_v_soft)
 DEG.GelMACad_stiff_v_soft$genes <- rownames(DEG.GelMACad_stiff_v_soft)
@@ -330,12 +294,11 @@ ggplot(DEG.stiffness_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = l
   ylab(expression(Average~Log[2]~Fold~Change~GelMA-Cad^LC~v~GelMA-Cad^HC)) +
   theme_prism() +
   NoLegend()
-```
 
-```{r}
+
 # Main comparison: GelMACad v GelMA
-Idents(so.DLEN) <- so.DLEN$Matrix
-DEG.GelMA_v_GelMACad <- FindMarkers(so.DLEN, ident.1 = 'GelMA', ident.2 = 'GelMACad')
+Idents(so.RG) <- so.RG$Matrix
+DEG.GelMA_v_GelMACad <- FindMarkers(so.RG, ident.1 = 'GelMA', ident.2 = 'GelMACad')
 
 # Pathway analysis 
 converted.symbols <- AnnotationDbi::select(org.Hs.eg.db, 
@@ -357,22 +320,16 @@ gsea_DEG.GelMA_v_GelMACad <- gseKEGG(geneList = geneList,
               verbose      = FALSE)
 
 gsea_DEG.GelMA_v_GelMACad@result
-```
-```{r}
-subset(gsea_DEG.GelMA_v_GelMACad@result, Description == 'Metabolic pathways')[,11]
-```
 
-```{r}
 # Manually type out pathway genes from the GSEA table for pathways of interest
 Metabolic_pathway <- subset(converted.symbols, ENTREZID %in% 
 c('2821','2026','3157','5315','51477','3422','2224','226','4282','230','6713','5230','9415','5033','4597','1717','2023','527','6307','23646','2987'))
 
 # Sub comparisons
-Idents(so.DLEN) <- so.DLEN$orig.ident
-DEG.GelMA_soft_v_GelMACad_soft <- FindMarkers(so.DLEN, ident.1 = 'GelMA_LC', ident.2 = 'GelMACad_LC', logfc.threshold = 0)
-DEG.GelMA_stiff_v_GelMACad_stiff <- FindMarkers(so.DLEN, ident.1 = 'GelMA_HC', ident.2 = 'GelMACad_HC', logfc.threshold = 0)
-```
-```{r}
+Idents(so.RG) <- so.RG$orig.ident
+DEG.GelMA_soft_v_GelMACad_soft <- FindMarkers(so.RG, ident.1 = 'GelMA_LC', ident.2 = 'GelMACad_LC', logfc.threshold = 0)
+DEG.GelMA_stiff_v_GelMACad_stiff <- FindMarkers(so.RG, ident.1 = 'GelMA_HC', ident.2 = 'GelMACad_HC', logfc.threshold = 0)
+
 # Plotting
 DEG.GelMA_soft_v_GelMACad_soft$genes <- rownames(DEG.GelMA_soft_v_GelMACad_soft)
 DEG.GelMA_stiff_v_GelMACad_stiff$genes <- rownames(DEG.GelMA_stiff_v_GelMACad_stiff)
@@ -431,8 +388,7 @@ ggplot(DEG.peptide_combined, aes(x = avg_log2FC.x, y = avg_log2FC.y, label = lab
   ylab(expression(Average~Log[2]~Fold~Change~GelMA-Cad^HC~v~GelMA^HC)) +
   theme_prism() +
   NoLegend()
-```
-```{r}
+
 # Save datasets
 saveRDS(DEG.GelMA_combined, "2024.04.22_DEG.GelMA_combined.RDS")
 saveRDS(DEG.GelMA_soft_v_GelMACad_soft, "2024.04.22_DEG.GelMA_soft_v_GelMACad_soft.RDS")
@@ -454,4 +410,3 @@ saveRDS(gsea_DEG.GelMA_v_GelMACad, "2024.04.22_gsea_DEG.GelMA_v_GelMACad.RDS")
 saveRDS(gsea_DEG.GelMA_v_Matrigel, "2024.04.22_gsea_DEG.GelMA_v_Matrigel.RDS" )
 saveRDS(gsea_DEG.GelMACad_v_Matrigel, "2024.04.22_gsea_DEG.GelMACad_v_Matrigel.RDS")
 saveRDS(gsea_DEG.stiff_v_soft, "2024.04.22_gsea_DEG.stiff_v_soft.RDS")
-```
