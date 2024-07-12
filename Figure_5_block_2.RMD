@@ -1,0 +1,56 @@
+Purpose: run Gruffi on cells to improve cell trajectory analysis and downstream analysis.
+
+# Import necessary libraries
+library(Seurat.utils)
+library(biomaRt)
+library(Seurat)
+library(dplyr)
+library(Gruffi)
+
+# Read in pre-filtered dataset
+so <- readRDS("2024.06.13_excitatory_neurons_primary_Matrigel_GelMACadHC_so.RDS") # Read in dataset pre-filtering
+
+# Prepare dataset for Gruffi
+DefaultAssay(so) <- 'integrated'
+combined.obj <- Seurat.utils::SetupReductionsNtoKdimensions(obj = so, nPCs = 50, dimensions=3:2, reduction="umap", assay = 'integrated')
+
+# Import gene sets for filtering
+ensembl <- biomaRt::useEnsembl("ensembl", dataset = "hsapiens_gene_ensembl")
+go1 <- "GO:0006096" # Glycolysis
+go2 <- "GO:0034976" # ER-stress
+go3 <- "GO:0042063" # Gliogenesis, negative filtering
+
+combined.obj <- FindNeighbors(combined.obj)
+combined.obj <- FindClusters(combined.obj)
+
+# Find granular resolution for filtering
+combined.obj <- aut.res.clustering(obj = combined.obj)
+granule.res.4.gruffi <- combined.obj@misc$gruffi$'optimal.granule.res'	
+combined.obj <- reassign.small.clusters(combined.obj, ident = granule.res.4.gruffi) # will be stored in meta data column as "seurat_clusters.reassigned"
+granule.res.4.gruffi <- paste0(granule.res.4.gruffi, '.reassigned')
+
+# Add module scores
+# Glycolytic process	GO:0006096
+combined.obj <- GO_score_evaluation(obj = combined.obj, GO_term = go1, save.UMAP = TRUE, new_GO_term_computation = T, clustering = granule.res.4.gruffi, plot.each.gene = F)
+
+# ER stress 	GO:0034976
+combined.obj <- GO_score_evaluation(obj = combined.obj, GO_term = go2, save.UMAP = TRUE, new_GO_term_computation = T, clustering = granule.res.4.gruffi, plot.each.gene = F)
+
+combined.obj$condition <- combined.obj$orig.ident
+combined.obj$condition <- recode(combined.obj$condition,
+                                 "primary" = "primary",
+                                 "10191_AK_2" = "GelMA-Cad HC D120",
+                                 "10191_AK_4" = "GelMA-Cad HC D90",
+                                 "10191_AK_5" = "Matrigel D90",
+                                 "10579_AK_3" = "Matrigel D120",
+                                 "11334_AK_3" = "GelMA-Cad HC D21",
+                                 "11334_AK_6" = "Matrigel D21",
+                                 "9968_AK_6" = "GelMA-Cad HC D60",
+                                 "9968_AK_7" = "Matrigel D60")
+
+levels1 <- c('primary','GelMA-Cad HC D21','Matrigel D21',  'GelMA-Cad HC D60','Matrigel D60', 'GelMA-Cad HC D90','Matrigel D90','GelMA-Cad HC D120','Matrigel D120')
+combined.obj$condition <- factor(x = combined.obj$condition, levels = levels1)
+
+# Visualize modules
+pdf("2024.06.13_VlnPlot_glycolysis_ER_stress_modules_large.pdf", width = 12, height = 5)
+VlnPlot(combined.obj, group.by = 'condition', features = c('Score.GO.0006096','Score.GO.0034976'), raster = F, pt.size = 0, cols = c('white','salmon','gold','salmon','gold','salmon','gold','salmon','gold'))
