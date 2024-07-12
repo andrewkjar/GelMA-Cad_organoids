@@ -1,0 +1,259 @@
+Purpose: Integrate GelMA-Cad HC and Matrigel samples with primary dataset 
+Bhaduri, A., Andrews, M.G., Mancia Leon, W. et al. Cell stress in cortical organoids impairs molecular subtype specification. Nature 578, 142–148 (2020). https://doi.org/10.1038/s41586-020-1962-0
+
+# Import libraries
+library(Seurat)
+library(tidyverse)
+library(ggprism)
+
+# Import GelMA-Cad HC and Matrigel samples, and integrate, based on previous filtering
+#Day 21
+so.1.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5")
+so.1 <- CreateSeuratObject(counts = so.1.data, min.cells = 3, min.features = 200)
+so.1$orig.ident <- '11334_AK_3'
+so.1$matrix <- 'GelMACad_HC'
+so.1$day <- '21'
+rm(so.1.data)
+
+so.2.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0006_S1_L005_results/filtered_matrix/sensitivity_5")
+so.2 <- CreateSeuratObject(counts = so.2.data, min.cells = 3, min.features = 200)
+so.2$orig.ident <- '11334_AK_6'
+so.2$matrix <- 'Matrigel'
+so.2$day <- '21'
+rm(so.2.data)
+
+# D21 filtering
+so.1 <- subset(so.1, subset = nFeature_RNA > 1800 & nFeature_RNA < 6000)
+so.2 <- subset(so.2, subset = nFeature_RNA > 1800 & nFeature_RNA < 6000)
+
+#Day 60
+so.3.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-6_S1_L005_results/filtered_matrix/sensitivity_5")
+so.3 <- CreateSeuratObject(counts = so.3.data, min.cells = 3, min.features = 200)
+so.3$orig.ident <- '9968_AK_6'
+so.3$matrix <- 'GelMACad_HC'
+so.3$day <- '60'
+rm(so.3.data)
+
+so.4.data <- Read10X("/data/lippmann_lab/9968-AK/9968-AK-7_S1_L005_results/filtered_matrix/sensitivity_5")
+so.4 <- CreateSeuratObject(counts = so.4.data, min.cells = 3, min.features = 200)
+so.4$orig.ident <- '9968_AK_7'
+so.4$matrix <- 'Matrigel'
+so.4$day <- '60'
+rm(so.4.data)
+
+# D60 filtering
+so.3 <- subset(so.3, subset = nFeature_RNA > 1000 & nFeature_RNA < 4000)
+so.4 <- subset(so.4, subset = nFeature_RNA > 1000 & nFeature_RNA < 4000)
+
+#D90 and D120
+so.5.data <- Read10X("/data/lippmann_lab/10191-AK/10191-AK-0004_S1_L005_results/filtered_matrix/sensitivity_5")
+so.5 <- CreateSeuratObject(counts = so.5.data, min.cells = 3, min.features = 200)
+so.5$orig.ident <- '10191_AK_4'
+so.5$matrix <- 'GelMACad_HC'
+so.5$day <- '90'
+rm(so.5.data)
+
+so.6.data <- Read10X("/data/lippmann_lab/10191-AK/10191-AK-0005_S1_L005_results/filtered_matrix/sensitivity_5")
+so.6 <- CreateSeuratObject(counts = so.6.data, min.cells = 3, min.features = 200)
+so.6$orig.ident <- '10191_AK_5'
+so.6$matrix <- 'Matrigel'
+so.6$day <- '90'
+rm(so.6.data)
+
+so.7.data <- Read10X("/data/lippmann_lab/10191-AK/10191-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5")
+so.7 <- CreateSeuratObject(counts = so.7.data, min.cells = 3, min.features = 200)
+so.7$orig.ident <- '10191_AK_2'
+so.7$matrix <- 'GelMACad_HC'
+so.7$day <- '120'
+rm(so.7.data)
+
+so.8.data <- Read10X("/data/lippmann_lab/10579-AK/10579-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5")
+so.8 <- CreateSeuratObject(counts = so.8.data, min.cells = 3, min.features = 200)
+so.8$orig.ident <- '10579_AK_3'
+so.8$matrix <- 'Matrigel'
+so.8$day <- '120'
+rm(so.8.data)
+
+# D90,120 filtering
+so.5 <- subset(so.5, subset = nFeature_RNA > 2000 & nFeature_RNA < 8000)
+so.6 <- subset(so.6, subset = nFeature_RNA > 2000 & nFeature_RNA < 8000)
+so.7 <- subset(so.7, subset = nFeature_RNA > 2000 & nFeature_RNA < 8000)
+so.8 <- subset(so.8, subset = nFeature_RNA > 2000 & nFeature_RNA < 8000)
+
+# Merge datasets
+so.combined.early <- merge(so.1, y = c(so.2))
+so.combined.late <- merge(so.3, y = c(so.4, so.5, so.6, so.7, so.8))
+
+rm(so.1, so.2, so.3, so.4, so.5, so.6, so.7, so.8)
+
+# Run typical filtering
+so.combined.early <- NormalizeData(so.combined.early)
+so.combined.early <- FindVariableFeatures(so.combined.early, selection.method = "vst", nfeatures = 2000)
+so.combined.early <- ScaleData(so.combined.early, verbose = FALSE)
+
+so.combined.late <- NormalizeData(so.combined.late)
+so.combined.late <- FindVariableFeatures(so.combined.late, selection.method = "vst", nfeatures = 2000)
+so.combined.late <- ScaleData(so.combined.late, verbose = FALSE)
+
+features <- SelectIntegrationFeatures(object.list = c(so.combined.early, so.combined.late))
+anchors <- FindIntegrationAnchors(object.list = c(so.combined.early, so.combined.late), anchor.features = features)
+so.integrated <- IntegrateData(anchorset = anchors)
+
+DefaultAssay(so.integrated) <- 'integrated'
+
+# Rerun, after integration
+so.integrated <- ScaleData(so.integrated, verbose = FALSE)
+so.integrated <- RunPCA(so.integrated, npcs = 50, verbose = FALSE)
+so.integrated <- RunUMAP(so.integrated, reduction = "pca", dims = 1:50)
+so.integrated <- FindNeighbors(so.integrated, reduction = "pca", dims = 1:50)
+so.integrated <- FindClusters(so.integrated, resolution = 1)
+
+# Save RDS
+saveRDS(so.integrated, "2024.06.10_integrated_GelMACad_HC_Matrigel_so.RDS")
+
+# Read in Bhaduri dataset
+so.primary <- readRDS("/data/lippmann_lab/Bhaduri_2020/Bhaduri_2020/primary/2023.06.08_primary_so.RDS")
+
+features.full <- SelectIntegrationFeatures(object.list = c(so.integrated, so.primary))
+anchors.full <- FindIntegrationAnchors(object.list = c(so.integrated, so.primary), anchor.features = features.full)
+so.integrated.full <- IntegrateData(anchorset = anchors.full)
+
+# Save integrated data
+saveRDS(so.integrated.full, "2024.06.10_so.integrated_w_bhaduri_primary.RDS")
+
+# Re-run typical visualization steps
+so.integrated.full <- ScaleData(so.integrated.full, verbose = FALSE)
+so.integrated.full <- RunPCA(so.integrated.full, npcs = 50, verbose = FALSE)
+so.integrated.full <- RunUMAP(so.integrated.full, reduction = "pca", dims = 1:50)
+so.integrated.full <- FindNeighbors(so.integrated.full, reduction = "pca", dims = 1:50)
+so.integrated.full <- FindClusters(so.integrated.full, resolution = 1)
+
+
+levels <- c('primary','11334_AK_3','11334_AK_6','9968_AK_6','9968_AK_7','10191_AK_4','10191_AK_5','10191_AK_2','10579_AK_3')
+so.integrated.full$orig.ident <- factor(x = so.integrated.full$orig.ident, levels = levels)
+
+# Visualize UMAPS
+pdf("2024.06.11_DimPlot_so.integrated_bhaduri.pdf", width = 20, height = 4)
+DimPlot(so.integrated.full, split.by = 'orig.ident', group.by = 'Type', raster = F)
+
+# Find majority cell type per unbiased cluster
+cell.numbers <- table(so.integrated.full$Type, so.integrated.full$seurat_clusters)
+max_row_names <- apply(cell.numbers, 2, function(col) {
+  if (all(col == 0)) {
+    return("No Match")
+  } else {
+    return(rownames(cell.numbers)[which.max(col)])
+  }
+})
+
+cells.per.sample <- table(so.integrated.full$orig.ident, so.integrated.full$seurat_clusters)
+
+# Visualize composition of cell types in dataset
+normalize_by_row_sum <- function(df) {
+  # Apply function to each row
+  normalized_df <- t(apply(df, 1, function(row) {
+    row / sum(row)
+  }))
+  return(as.data.frame(normalized_df))
+}
+
+cells.per.sample.normalized <- normalize_by_row_sum(cells.per.sample)
+colnames(cells.per.sample.normalized) <- max_row_names
+
+# Sum columns with the same name
+combine_duplicate_columns <- function(df) {
+  unique_colnames <- unique(colnames(df))
+  combined_df <- sapply(unique_colnames, function(col) {
+    rowSums(df[, colnames(df) == col, drop = FALSE])
+  })
+  return(as.data.frame(combined_df, row.names = row.names(df)))
+}
+
+# Combine the columns
+combined.cells <- combine_duplicate_columns(cells.per.sample.normalized)
+subset.combined.cells <- combined.cells[row.names(combined.cells) != "primary", ]
+
+# Convert to long form
+long_form.subset.cell.numbers <- subset.combined.cells %>%
+  rownames_to_column(var = "RowName") %>%
+  pivot_longer(-RowName, names_to = "ColumnName", values_to = "Value")
+
+# Custom order for RowName and ColumnName
+custom_row_order <- c('11334_AK_3','11334_AK_6','9968_AK_6','9968_AK_7','10191_AK_4','10191_AK_5','10191_AK_2','10579_AK_3')
+custom_col_order <- c("No Match","Endothelial","Excitatory Neuron ","Inhibitory Neuron","IPC","Microglia","Mural","OPC","Outlier","Radial Glia","Red blood cells")
+
+# Set the levels of the factors
+long_form.subset.cell.numbers <- long_form.subset.cell.numbers %>%
+  mutate(RowName = factor(RowName, levels = custom_row_order),
+         ColumnName = factor(ColumnName, levels = custom_col_order))
+
+colnames(long_form.subset.cell.numbers) <- c('Matrix','Population','Proportion')
+
+pdf("2024.06.12_fetal_database_match_cell_proportions.pdf", width = 6, height = 6)
+ggplot(subset(long_form.subset.cell.numbers, Proportion != 0), aes(x = Matrix, y = Population, size = Proportion, color = Population)) +
+  geom_point() +
+  theme_prism() + 
+  scale_y_discrete(limits = rev(levels(long_form.subset.cell.numbers$Population))) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+# Look at cell composition numbers, format data table for visualization
+subcell.numbers <- table(so.integrated.full$Subtype, so.integrated.full$seurat_clusters)
+submax_row_names <- apply(subcell.numbers, 2, function(col) {
+  if (all(col == 0)) {
+    return("No Match")
+  } else {
+    return(rownames(subcell.numbers)[which.max(col)])
+  }
+})
+
+subcells.per.sample <- cells.per.sample
+colnames(subcells.per.sample) <- submax_row_names
+subcombined.cells <- combine_duplicate_columns(subcells.per.sample)
+subcombined.cells$matrix <- c('Primary','GelMA-Cad HC','Matrigel','GelMA-Cad HC','Matrigel','GelMA-Cad HC','Matrigel','GelMA-Cad HC','Matrigel')
+collapsed.subcombined.cells <- subcombined.cells %>%
+  group_by(matrix) %>%
+  summarise(across(everything(), sum))
+normalized.collapsed.subcombined.cells <- collapsed.subcombined.cells %>%
+  rowwise() %>%
+  mutate(across(-matrix, ~ ./sum(c_across(-matrix))))
+colnames(normalized.collapsed.subcombined.cells) <- c("matrix",
+                                                      "22. Low Quality",
+                                                      "07. Upper Layer PFC Excitatory Neuron",
+                                                      "10. SST-MGE1",
+                                                      "04. Layer VI Pan-area Excitatory Neuron",
+                                                      "05. Upper Layer Occipital Excitatory Neuron",
+                                                      "14. Outer Radial Glia",
+                                                      "01. Early Excitatory Neuron",
+                                                      "06. Layer VI Occipital Excitatory Neuron",
+                                                      "03. Parietal and Temporal Excitatory Neuron",
+                                                      "15. Ventral Radial Glia",
+                                                      "16. Late Radial Glia",
+                                                      "02. Newborn Excitatory Neuron",
+                                                      "13. IPC/newborn",
+                                                      "12. IPC",
+                                                      "11. MGE",
+                                                      "23. Outlier",
+                                                      "08. Deep Layer Excitatory Neuron",
+                                                      "09. Layer IV Excitatory Neuron",
+                                                      "21. Microglia",
+                                                      "17. oRG/Astrocyte",
+                                                      "18. OPC",
+                                                      "19. Cajal Retzius Neuron",
+                                                      "20. Mural",
+                                                      "24. No Match")    
+
+long_normalized.collapsed.subcombined.cells <- normalized.collapsed.subcombined.cells %>%
+  pivot_longer(cols = !starts_with("matrix"),
+               names_to = "variable",
+               values_to = "value")
+colnames(long_normalized.collapsed.subcombined.cells) <- c('Matrix','Population','Proportion')
+
+pdf("2024.06.12_fetal_database_match_cell_proportions_subtypes.pdf", width = 16, height = 4)
+ggplot(subset(long_normalized.collapsed.subcombined.cells, Proportion != 0), aes(y = Matrix, x = Population, size = Proportion)) +
+  geom_point() +
+  theme_prism() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+# Save excitatory neurons for further analysis
+so.EN <- subset(so.integrated.full, seurat_clusters %in% c(0,1,3,4,7,8,11,12,13,22,27))
+saveRDS(so.EN, "2024.06.13_excitatory_neurons_primary_Matrigel_GelMACadHC_so.RDS")
