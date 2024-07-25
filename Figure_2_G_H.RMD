@@ -1,0 +1,77 @@
+Purpose: visualize ZO-1 regions from whole mount images
+
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(dplyr)
+library(ggbeeswarm)
+
+# Import data
+summary_df.filtered.size <- read.csv("2024.06.18_ZO1_analysis_with_size.csv")
+
+# Run and inspect statistics
+summary_df.filtered.size$condition <- factor(summary_df.filtered.size$condition, levels = c('GelMA LC','GelMA HC','GelMA-Cad LC','GelMA-Cad HC','MATRIGEL NA'))
+
+aov.results <- aov(count_per_area...10.4 ~ condition, summary_df.filtered.size)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+
+# Plot the counts
+# Create dataframe to store p value in
+df_p_val <- as.data.frame(tukey.results$condition)
+df_p_val$group1 <- c('GelMA HC','GelMA-Cad LC','GelMA-Cad HC','MATRIGEL NA','GelMA-Cad LC','GelMA-Cad HC','MATRIGEL NA','GelMA-Cad HC','MATRIGEL NA','MATRIGEL NA')
+df_p_val$group2 <- c('GelMA LC','GelMA LC','GelMA LC','GelMA LC','GelMA HC','GelMA HC','GelMA HC','GelMA-Cad LC','GelMA-Cad LC','GelMA-Cad HC')
+
+df_p_val$y.position <- c(30,30,30,30,15,18,21,30,30,30)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+cairo_pdf("2024.06.28_ZO1_quantifications_counts_normalized.pdf", width = 4, height = 4)
+ggplot(summary_df.filtered.size, aes(x = condition, y = count_per_area...10.4)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  theme(axis.text.x = element_text(angle = 45, vjust =1 , hjust=1)) +
+  scale_x_discrete(labels = c(bquote(GelMA^LC), bquote(GelMA^HC), bquote(GelMA-Cad^LC), bquote(GelMA-Cad^HC), bquote(Matrigel))) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  ylab('Number ZO-1 \n Regions / 10\u2074 \u03bcm\u00b2') +
+  ylim(c(0,24))
+
+# Run and inspect statistics
+summary_df.filtered.size$condition <- factor(summary_df.filtered.size$condition, levels = c('GelMA LC','GelMA HC','GelMA-Cad LC','GelMA-Cad HC','MATRIGEL NA'))
+
+aov.results <- aov(average_Feret ~ condition, summary_df.filtered.size)
+tukey.results <- TukeyHSD(aov.results)
+tukey.results
+
+# Create dataframe to store p value in
+df_p_val <- as.data.frame(tukey.results$condition)
+df_p_val$group1 <- c('GelMA HC','GelMA-Cad LC','GelMA-Cad HC','MATRIGEL NA','GelMA-Cad LC','GelMA-Cad HC','MATRIGEL NA','GelMA-Cad HC','MATRIGEL NA','MATRIGEL NA')
+df_p_val$group2 <- c('GelMA LC','GelMA LC','GelMA LC','GelMA LC','GelMA HC','GelMA HC','GelMA HC','GelMA-Cad LC','GelMA-Cad LC','GelMA-Cad HC')
+df_p_val$y.position <- c(27,27,27,33,27,27,36,30,39,39)
+df_p_val$`p adj round` <- round(df_p_val$`p adj`, digits = 3)
+df_p_val <- subset(df_p_val, `p adj` < 0.05)
+for (i in 1:length(df_p_val$diff)) {
+  if (df_p_val$`p adj round`[i] == 0) {
+    df_p_val$`p adj round`[i] = '< 0.0001' 
+  }
+}
+
+# Plot the diameters
+#cairo_pdf("2024.06.17_ZO1_quantifications_stats_diameter.pdf", width = 4, height = 4)
+ggplot(summary_df.filtered.size, aes(x = condition, y = average_Feret)) +
+  geom_boxplot(fill = c('darkturquoise','turquoise','goldenrod','gold','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  add_pvalue(df_p_val, label = 'p adj round') +
+  scale_x_discrete(labels = c(bquote(GelMA^LC), bquote(GelMA^HC), bquote(GelMA-Cad^LC), bquote(GelMA-Cad^HC), bquote(Matrigel))) + 
+  ylim(c(0,45)) +
+  ylab('Mean Diameter (\u03bcm)')
