@@ -1,0 +1,191 @@
+Purpose: visualize linked populations of cells in UMAPs
+
+# Import library
+library(Seurat)
+
+# Read in D90 and D120 data
+so <- readRDS("2023.11.13_so_w_NMI.RDS")
+
+# Read in a sample at a time, to normalize and visualize
+so.GelMACad.120 <- subset(so, condition %in% c('D120 GelMA-Cad_HC','D120 GelMA-Cad_LC'))
+so.GelMACad.120 <- NormalizeData(so.GelMACad.120)
+so.GelMACad.120 <- FindVariableFeatures(so.GelMACad.120, selection.method = "vst", nfeatures = 2000)
+so.GelMACad.120 <- ScaleData(so.GelMACad.120, verbose = FALSE)
+so.GelMACad.120 <- RunPCA(so.GelMACad.120, npcs = 50, verbose = FALSE)
+so.GelMACad.120 <- RunUMAP(so.GelMACad.120, reduction = "pca", dims = 1:50)
+so.GelMACad.120 <- FindNeighbors(so.GelMACad.120, reduction = "pca", dims = 1:50)
+so.GelMACad.120 <- FindClusters(so.GelMACad.120, resolution = 1)
+
+so.GelMA.120 <- NormalizeData(so.GelMA.120)
+so.GelMA.120 <- FindVariableFeatures(so.GelMA.120, selection.method = "vst", nfeatures = 2000)
+so.GelMA.120 <- ScaleData(so.GelMA.120, verbose = FALSE)
+so.GelMA.120 <- RunPCA(so.GelMA.120, npcs = 50, verbose = FALSE)
+so.GelMA.120 <- RunUMAP(so.GelMA.120, reduction = "pca", dims = 1:50)
+so.GelMA.120 <- FindNeighbors(so.GelMA.120, reduction = "pca", dims = 1:50)
+so.GelMA.120 <- FindClusters(so.GelMA.120, resolution = 1)
+
+so.Matrigel.120 <- subset(so, condition %in% c('D120 Matrigel'))
+so.Matrigel.120 <- NormalizeData(so.Matrigel.120)
+so.Matrigel.120 <- FindVariableFeatures(so.Matrigel.120, selection.method = "vst", nfeatures = 2000)
+so.Matrigel.120 <- ScaleData(so.Matrigel.120, verbose = FALSE)
+so.Matrigel.120 <- RunPCA(so.Matrigel.120, npcs = 50, verbose = FALSE)
+so.Matrigel.120 <- RunUMAP(so.Matrigel.120, reduction = "pca", dims = 1:50)
+so.Matrigel.120 <- FindNeighbors(so.Matrigel.120, reduction = "pca", dims = 1:50)
+so.Matrigel.120 <- FindClusters(so.Matrigel.120, resolution = 1)
+
+# Visualize, using custom coloring for cell populations
+pdf("2024.07.19_RG_trajectory_populations_day120.pdf", width = 8, height = 5)
+DimPlot(so.Matrigel.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray','gray',
+                 'gray','gray','deeppink',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray','gray','pink','gray','gray','gray','gray',
+                 'gray',
+                 'gray'
+        )
+          ) + ggtitle('Matrigel')
+DimPlot(so.Matrigel.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray','gray',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray',
+                 'turquoise','turquoise','turquoise','turquoise','turquoise',
+                 'gray',
+                 'gray','gray','gray','gray','gray','darkgreen','gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray'
+        )
+          ) + ggtitle('Matrigel')
+
+DimPlot(so.Matrigel.120, raster = F, group.by = 'cell_type',
+        cols = c('darkorange','darkorange','gray','darkorange',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray','gray','gold','gray',
+                 'gray',
+                 'gray'
+        )
+          ) + ggtitle('Matrigel')
+
+DimPlot(so.Matrigel.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','black','gray',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'black','black','black','black','black','black','black','black',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray25','gray','gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray'
+        )
+          ) + ggtitle('Matrigel')
+
+
+DimPlot(so.GelMA.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray','gray',
+                 'gray','gray','deeppink',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray','gray','pink','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray'
+        )) + ggtitle('GelMA')
+
+DimPlot(so.GelMA.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray','gray',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray',
+                 'turquoise','turquoise','turquoise','turquoise','turquoise',
+                 'gray',
+                 'gray','gray','gray','gray','gray','darkgreen','gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray'
+        )) + ggtitle('GelMA')
+
+DimPlot(so.GelMA.120, raster = F, group.by = 'cell_type',
+        cols = c('darkorange','darkorange','gray','darkorange',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray','gray','gold','gray',
+                 'gray',
+                 'gray','gray','gray'
+        )) + ggtitle('GelMA')
+
+DimPlot(so.GelMA.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','black','gray',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','black','black','black','black','black','black','black',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray25','gray','gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray'
+        )) + ggtitle('GelMA')
+
+
+
+DimPlot(so.GelMACad.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray',
+                 'gray','gray','deeppink',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray','gray','pink','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray'
+        )) + ggtitle('GelMA-Cad')
+
+DimPlot(so.GelMACad.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'turquoise','turquoise','turquoise','turquoise','turquoise',
+                 'gray',
+                 'gray','gray','gray','gray','gray','darkgreen','gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray'
+        )) + ggtitle('GelMA-Cad')
+
+DimPlot(so.GelMACad.120, raster = F, group.by = 'cell_type',
+        cols = c('darkorange','darkorange','darkorange',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray','gray','gray','gray','gray','gold','gray',
+                 'gray',
+                 'gray','gray'
+        )) + ggtitle('GelMA-Cad')
+
+DimPlot(so.GelMACad.120, raster = F, group.by = 'cell_type',
+        cols = c('gray','gray','gray',
+                 'gray','gray','gray',
+                 'gray','gray','gray','gray',
+                 'black','black','black','black',
+                 'gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray','gray','gray','gray25','gray','gray','gray','gray','gray','gray',
+                 'gray',
+                 'gray','gray'
+        )) + ggtitle('GelMA-Cad')
+
+# Save RDS
+saveRDS(so.GelMA.120, "2024.07.19_so.GelMA.120.RDS")
+saveRDS(so.GelMACad.120, "2024.07.19_so.GelMACad.120.RDS")
+saveRDS(so.Matrigel.120, "2024.07.19_so.Matrigel.120.RDS")
