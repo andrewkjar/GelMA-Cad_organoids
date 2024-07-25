@@ -1,4 +1,4 @@
-Purpose: run Gruffi on cells to improve cell trajectory analysis and downstream analysis.
+Purpose: score cells for cell stress pathways, across the integrated time conditions.
 
 # Import necessary libraries
 library(Seurat.utils)
