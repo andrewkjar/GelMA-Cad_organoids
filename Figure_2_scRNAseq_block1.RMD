@@ -1,0 +1,66 @@
+Purpose: analyse D21 single cell RNA sequencing results
+
+# Import necessary libraries
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+
+# Read in data
+so.1.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0001_S1_L005_results/filtered_matrix/sensitivity_5")
+so.1 <- CreateSeuratObject(counts = so.1.data, min.cells = 3, min.features = 200)
+so.1$orig.ident <- 'GelMA_HC'
+rm(so.1.data)
+
+so.2.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0002_S1_L005_results/filtered_matrix/sensitivity_5")
+so.2 <- CreateSeuratObject(counts = so.2.data, min.cells = 3, min.features = 200)
+so.2$orig.ident <- 'GelMA_LC'
+rm(so.2.data)
+
+so.3.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0003_S1_L005_results/filtered_matrix/sensitivity_5")
+so.3 <- CreateSeuratObject(counts = so.3.data, min.cells = 3, min.features = 200)
+so.3$orig.ident <- 'GelMACad_HC'
+rm(so.3.data)
+
+so.4.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0004_S1_L005_results/filtered_matrix/sensitivity_5")
+so.4 <- CreateSeuratObject(counts = so.4.data, min.cells = 3, min.features = 200)
+so.4$orig.ident <- 'GelMACad_LC'
+rm(so.4.data)
+
+so.6.data <- Read10X("/data/lippmann_lab/11334-AK/11334-AK-0006_S1_L005_results/filtered_matrix/sensitivity_5")
+so.6 <- CreateSeuratObject(counts = so.6.data, min.cells = 3, min.features = 200)
+so.6$orig.ident <- 'Matrigel'
+rm(so.6.data)
+
+# Merge datasets
+so.combined <- merge(so.1, y = c(so.2, so.3, so.4, so.6))
+
+# Do initial filtering based on mitochondrial percentage and number of features
+so.combined[["percent.mt"]] <- PercentageFeatureSet(so.combined, pattern = "^MT-")
+so.combined.cleaned <- subset(so.combined, subset = nFeature_RNA > 1800 & nFeature_RNA < 6000)
+
+# Process data, do dimension reduction
+so.combined.cleaned <- NormalizeData(so.combined.cleaned)
+so.combined.cleaned <- FindVariableFeatures(so.combined.cleaned, selection.method = "vst", nfeatures = 2000)
+so.combined.cleaned <- ScaleData(so.combined.cleaned, verbose = FALSE)
+so.combined.cleaned <- RunPCA(so.combined.cleaned, npcs = 50, verbose = FALSE)
+so.combined.cleaned <- RunUMAP(so.combined.cleaned, reduction = "pca", dims = 1:50)
+so.combined.cleaned <- FindNeighbors(so.combined.cleaned, reduction = "pca", dims = 1:50)
+so.combined.cleaned <- FindClusters(so.combined.cleaned, resolution = 1)
+
+# Annotate cells
+so.combined.cleaned$course_cell_type <- so.combined.cleaned$RNA_snn_res.0.1
+so.combined.cleaned$course_cell_type <- recode(so.combined.cleaned$course_cell_type,
+                                               "0" = "Radial glia",
+                                               "1" = "Radial glia (cycling)",
+                                               "2" = "IPCs / Neurons",
+                                               "3" = "Mesenchymal cells",
+                                               "4" = "Neural placode")
+
+# Save dataset
+saveRDS(so.combined.cleaned, "2024.04.17_so_organoids_D21.RDS")
+
+# Visualize
+pdf("2024.05.02_DimPlot_D21.pdf")
+DimPlot(so, group.by = 'course_cell_type',
+        cols = c('pink','lightgreen','turquoise','gold','springgreen3'))
+
