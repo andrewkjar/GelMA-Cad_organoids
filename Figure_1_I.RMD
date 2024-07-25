@@ -1,0 +1,29 @@
+Purpose: analyse permeability coefficients from microfluidic device experiments
+
+# Import libraries
+library(ggplot2)
+library(ggprism)
+library(ggbeeswarm)
+library(ggpubr)
+
+# Prep dataframe
+df <- read.csv("2024.06.17_permeability.csv")
+
+# Visualize
+cairo_pdf("2024.06.17_permeability.pdf", width = 4, height = 4)
+ggplot(df, aes(x = Condition, y = Permeability.Coefficient..cm.s.)) +
+  stat_summary(fun.y = mean, fun.ymin = mean, fun.ymax = mean, 
+               geom = 'crossbar', width = 0.4) +
+  geom_quasirandom(size = 4, color = 'black') +
+  geom_quasirandom(size = 3, aes(color = Condition)) +
+  scale_color_manual(values = c('turquoise','darkturquoise','gold','goldenrod')) +
+  ylab('Permeability \n(cm/s)') +
+  xlab('') +
+  theme_prism() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+  scale_x_discrete(labels = c(bquote(GelMA^HC), bquote(GelMA^LC), bquote(GelMA-Cad^HC), bquote(GelMA-Cad^LC),bquote(Matrigel))) +
+  theme(legend.position = 'none')
+
+# Compute statistics
+anova <- aov(Permeability.Coefficient..cm.s. ~ Cad + Stiffness, df)
+summary(anova)
