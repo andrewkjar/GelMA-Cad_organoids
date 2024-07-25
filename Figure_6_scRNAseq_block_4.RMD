@@ -1,0 +1,167 @@
+Purpose: conduct trajectory connectivity analysis
+
+# Import libraries 
+library(dbscan)
+library(Seurat)
+library(igraph)
+library(dplyr)
+library(purrr)
+library(tidyr)
+
+# Define functions that will be used in connectivity metric
+# Function to check if the matrix has converged
+has_converged <- function(mat1, mat2) {
+  return(all(mat1 == mat2))
+}
+
+# Define a function to evaluate the connectivity AUC for a dataset
+calc_AUC <- function(dataset){
+
+result_df <- data.frame(k.n.n. = numeric(), median.connectivity = numeric())
+for (i in seq(2,(nrow(dataset)-1), length.out = 10)) 
+  {
+    k = i
+    
+    # Find nearest neighbors  
+    nearest.neighbors <- kNN(x= dataset, k = k)
+    
+    # Get the maximum ID to define the size of the square matrix
+    max_id <- length(nearest.neighbors$id[,1])
+
+    # Initialize a square matrix with zeros
+    adj_matrix <- matrix(0, nrow = max_id, ncol = max_id)
+
+    # Iterate through each row of the data frame
+    for (i in 1:nrow(nearest.neighbors$id)) {
+        row_id <- i
+    for (j in 1:ncol(nearest.neighbors$id)) {
+        col_id <- nearest.neighbors$id[i, j]
+        adj_matrix[row_id, col_id] <- 1
+          }
+      }
+
+    # Iteratively update the matrix until it converges
+    prev_matrix <- adj_matrix
+    current_matrix <- (adj_matrix %*% adj_matrix > 0) | adj_matrix
+
+    while (!has_converged(prev_matrix, current_matrix)) {
+      prev_matrix <- current_matrix
+      current_matrix <- (current_matrix %*% current_matrix > 0) | current_matrix
+        }
+
+    # Compute the total number of connections
+    total_connections <- rowSums(current_matrix)
+    
+    # Append results to list
+      result_df <- rbind(result_df, data.frame(k.n.n. = k, median.connectivity = median(total_connections) / nrow(dataset)))
+
+    }
+
+# Smooth the data
+smooth_fit <- smooth.spline(result_df$k.n.n., result_df$median.connectivity, spar = 0.5)
+
+
+# Define a function to evaluate the smooth spline
+smooth_function <- function(x) {
+ predict(smooth_fit, x)$y
+}
+
+# Calculate the area under the curve
+area <- integrate(smooth_function, min(0), max_id)$value
+AUC <- (area / max_id - 0.5) * 2
+
+return(AUC)
+
+}
+
+
+# Import dataset, will do for each, filter to cell populations > 100 cells, and downsample
+seurat_obj <- readRDS("2024.07.19_so.GelMA.120.RDS")
+cell_type_counts <- table(seurat_obj$cell_type)
+cell_types_above_100 <- names(cell_type_counts[cell_type_counts > 100])
+result_df <- data.frame(celltype1 = character(), celltype2 = character(), AUC = numeric())
+
+# Loop through pairwise combinations of cell types
+for (i in 1:(length(cell_types_above_100) - 1)) {
+  for (j in (i + 1):length(cell_types_above_100)) {
+    celltype1 <- cell_types_above_100[i]
+    celltype2 <- cell_types_above_100[j]
+    
+    so.sub <- subset(seurat_obj, cell_type %in% c(celltype1,celltype2))
+    Idents(so.sub) <- so.sub$cell_type
+    so.sub <- subset(so.sub, downsample = 100)
+    sub.dataset <- as.data.frame(so.sub@reductions$umap@cell.embeddings)
+    
+    AUC <- calc_AUC(sub.dataset)
+    
+    result_df <- rbind(result_df, data.frame(celltype1 = celltype1, celltype2 = celltype2, AUC = AUC))
+    }               
+}
+
+result_df.GelMA.120 <- result_df
+
+# Repeat process for all other samples (CODE NOT INCLUDED HERE)
+# Save outputs
+
+saveRDS(result_df.GelMA.120, "2024.07.23_connectivity_GelMA_120.RDS")
+saveRDS(result_df.GelMACad.120, "2024.07.23_connectivity_GelMACad_120.RDS")
+saveRDS(result_df.Matrigel.120, "2024.07.23_connectivity_Matrigel_120.RDS")
+saveRDS(result_df.GelMA.90, "2024.07.23_connectivity_GelMA_90.RDS")
+saveRDS(result_df.GelMACad.90, "2024.07.23_connectivity_GelMACad_90.RDS")
+saveRDS(result_df.Matrigel.90, "2024.07.23_connectivity_Matrigel_90.RDS")
+# Format for column merging
+result_df.GelMA.120$pair <- paste(result_df.GelMA.120$celltype1, result_df.GelMA.120$celltype2)
+result_df.GelMA.90$pair <- paste(result_df.GelMA.90$celltype1, result_df.GelMA.90$celltype2)
+result_df.GelMACad.120$pair <- paste(result_df.GelMACad.120$celltype1, result_df.GelMACad.120$celltype2)
+result_df.GelMACad.90$pair <- paste(result_df.GelMACad.90$celltype1, result_df.GelMACad.90$celltype2)
+result_df.Matrigel.120$pair <- paste(result_df.Matrigel.120$celltype1, result_df.Matrigel.120$celltype2)
+result_df.Matrigel.90$pair <- paste(result_df.Matrigel.90$celltype1, result_df.Matrigel.90$celltype2)
+
+df_list <- list(result_df.GelMA.120, result_df.GelMA.90, result_df.GelMACad.120, result_df.GelMACad.90, result_df.Matrigel.120, result_df.Matrigel.90)
+
+final_combined <- df_list %>%
+  reduce(function(x, y) full_join(x, y, by = "pair")) %>%
+  select(pair, contains("AUC"))
+
+final_combined$average_AUC <- rowMeans(final_combined[,-1], na.rm = T)
+final_combined$number_points <- 6 - rowSums(is.na(final_combined[,-1]))
+final_combined <- final_combined %>%
+  separate(pair, into = c("celltype1", "celltype2"), sep = " ")
+
+write.csv(final_combined, "2024.07.25_organoid_population_connectivity_matrix.csv")
+
+# Visualize
+pdf("2024.07.24_iGraph_cluster_connectivity.pdf")
+set.seed(232)
+
+# Filter edge_data based on weight >= 0.8
+filtered_edges <- final_combined[final_combined$average_AUC >= 0.8 & final_combined$number_points > 2, ]
+filtered_edges$average_AUC_adj <- (filtered_edges$average_AUC ^ 10) * 10 # Adjust values for visualization
+cell_types <- unique(c(filtered_edges$celltype1, filtered_edges$celltype2))
+
+
+# Create graph object
+g <- graph_from_data_frame(filtered_edges[, c('celltype1','celltype2','average_AUC_adj')], directed = FALSE, vertices = cell_types)
+
+# Use a force-directed layout
+layout <- layout.fruchterman.reingold(g)
+
+# Plot graph with force-directed layout and edge weights; include with and without labels for formatting
+plot(g, 
+     layout = layout,
+     edge.width = filtered_edges$average_AUC_adj * 2,
+     vertex.size = 5
+)
+
+plot(g, 
+     layout = layout,
+     edge.width = filtered_edges$average_AUC_adj * 2,
+     vertex.size = 0
+)
+
+plot(g, 
+     layout = layout,
+     edge.width = filtered_edges$average_AUC_adj * 2,
+     vertex.size = 0,
+     vertex.label = NA
+)
