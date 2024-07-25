@@ -1,0 +1,39 @@
+Purpose: visualize GFAP area quantification
+
+# Import libraries
+library(ggprism)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(ggbeeswarm)
+library(ggplot2)
+
+# Import data
+df <- readxl::read_excel("C:/Users/mmfer/Downloads/GFAP_DATA_2024compiled.xlsx")
+
+# Prepare dataframe for visualization
+melted_df <- df %>%
+  pivot_longer(cols = -Organoids,
+               names_to = "Gel_Condition",
+               values_to = "GFAP_DAPI")
+
+clean_df <- melted_df %>%
+  filter(!is.na(GFAP_DAPI))
+print(clean_df)
+
+# Visualize
+pdf("2024.07.03_GFAP_quantifications_no_stats.pdf", width = 5, height = 5)
+ggplot(clean_df, aes(x = Gel_Condition, y = GFAP_DAPI)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  theme(axis.text.x = element_text(angle = 45, vjust =1 , hjust=1)) +
+  scale_x_discrete(labels = c(bquote(GelMA^HC), bquote(GelMA^LC), bquote(GelMA-Cad^HC), bquote(GelMA-Cad^LC), bquote(Matrigel)))+
+  labs(x ="condition", y = "GFAP+ Area/Organoid")
+
+# Run and inspect statistics
+aov.results <- aov(GFAP_DAPI ~ Gel_Condition, data = clean_df)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
