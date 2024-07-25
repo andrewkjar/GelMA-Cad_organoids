@@ -1,0 +1,29 @@
+Purpose: visualize RELN+ area quantification
+
+# Import libraries
+library(ggplot2)
+library(ggbeeswarm)
+library(ggprism)
+library(dplyr)
+
+# Import RELN data, and visualize
+df.RELN <- read.csv("2023.01.17_RELN_quantification_tabulated.csv")
+df.RELN.2 <- read.csv("Tabulated_RELN_quantification.csv")
+
+df.RELN_full <- rbind(df.RELN, df.RELN.2)
+df.RELN_full <- subset(df.RELN_full, Condition != 'CTRL')
+
+# Run and inspect statistics
+aov.results <- aov(Average.RELN...DAPI.Area ~ Condition, df.RELN_full)
+summary(aov.results)
+
+tukey.results <- TukeyHSD(aov.results)
+print(tukey.results)
+
+# Visualize
+pdf("2024.05.23_RELN_area.pdf", width = 4, height = 5)
+ggplot(df.RELN_full, aes(x = Condition, y = Average.RELN...DAPI.Area)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  ylab('RELN+ area / organoid')
