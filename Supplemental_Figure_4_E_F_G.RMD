@@ -1,0 +1,26 @@
+Purpose: visualize SATB2, CTIP2 proportions
+
+# Import libraries
+library(ggplot2)
+library(ggbeeswarm)
+library(ggprism)
+
+# Import data
+biological_summary_df <- read.csv("2024.06.13_SATB2_CTIP2_proportions.csv")
+
+# Visualize
+pdf("2024.07.16_CTIP2_SATB2_proportions.pdf", width = 4, height = 3)
+ggplot(subset(biological_summary_df, condition != 'CTRL NA'), aes(x = condition, y = mean_percent_SATB2)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism()
+
+ggplot(subset(biological_summary_df, condition != 'CTRL NA'), aes(x = condition, y = mean_percent_CTIP2)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism()
+
+ggplot(subset(biological_summary_df, condition != 'CTRL NA'), aes(x = condition, y = mean_percent_double)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism()
