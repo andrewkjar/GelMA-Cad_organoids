@@ -1,0 +1,21 @@
+# Purpose: visualize HOPX FABP5 radial glia quantification
+
+# Import libraries
+library(ggplot2)
+library(ggbeeswarm)
+library(ggprism)
+
+# Import FABP5 HOPX data, and visualize
+df <- read.csv("2024.06.10_RG_area_tabulated.csv")
+
+# Run and inspect statistics
+aov.results <- aov(Aveage.RG...DAPI.area ~ Condition, df)
+summary(aov.results)
+
+# Visualize
+pdf("2024.06.10_RG_area.pdf", width = 4, height = 5)
+ggplot(df, aes(x = Condition, y = Aveage.RG...DAPI.area)) +
+  geom_boxplot(fill = c('turquoise','darkturquoise','gold','goldenrod','salmon')) +
+  geom_beeswarm(cex = 2) +
+  theme_prism() +
+  ylab('FABP5 HOPX+ area / organoid')
