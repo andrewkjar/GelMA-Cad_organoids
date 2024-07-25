@@ -109,6 +109,7 @@ saveRDS(result_df.Matrigel.120, "2024.07.23_connectivity_Matrigel_120.RDS")
 saveRDS(result_df.GelMA.90, "2024.07.23_connectivity_GelMA_90.RDS")
 saveRDS(result_df.GelMACad.90, "2024.07.23_connectivity_GelMACad_90.RDS")
 saveRDS(result_df.Matrigel.90, "2024.07.23_connectivity_Matrigel_90.RDS")
+
 # Format for column merging
 result_df.GelMA.120$pair <- paste(result_df.GelMA.120$celltype1, result_df.GelMA.120$celltype2)
 result_df.GelMA.90$pair <- paste(result_df.GelMA.90$celltype1, result_df.GelMA.90$celltype2)
