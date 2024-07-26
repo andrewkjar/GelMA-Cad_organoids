@@ -1,4 +1,4 @@
-# Purpose: visualize HOPX FABP5 radial glia quantification
+Purpose: visualize HOPX FABP5 radial glia quantification
 
 # Import libraries
 library(ggplot2)
