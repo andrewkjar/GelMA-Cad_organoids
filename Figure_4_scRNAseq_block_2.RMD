@@ -1,3 +1,5 @@
+Purpose: import scanpy object into Seurat and calculate neural maturation index
+
 # Import libraries
 library(Seurat)
 library(SeuratDisk)
